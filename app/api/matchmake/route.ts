@@ -27,5 +27,9 @@ export const POST = handler(async (req) => {
     const parts = [synergy, against].filter((x): x is number => x !== null);
     return { ...t, synergy, against, estimate: parts.length ? parts.reduce((a, b) => a + b, 0) / parts.length : null };
   };
-  return { total: splits.length, options: splits.slice(0, 6).map((s) => ({ delta: s.delta, a: side(s.a, s.b), b: side(s.b, s.a) })), roles: ROLES };
+  // Filter splits where both teams have estimated win rate < 56%
+  const withEstimates = splits.map((s) => ({ delta: s.delta, a: side(s.a, s.b), b: side(s.b, s.a) }));
+  const balanced = withEstimates.filter((s) => (s.a.estimate === null || s.a.estimate < 0.56) && (s.b.estimate === null || s.b.estimate < 0.56));
+  const options = balanced.length > 0 ? balanced : withEstimates; // fall back to all if none pass filter
+  return { total: options.length, options: options.slice(0, 6), roles: ROLES };
 });
