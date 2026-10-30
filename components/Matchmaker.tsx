@@ -16,7 +16,7 @@ export default function Matchmaker({ players, admin }: { players: P[]; admin: bo
   const [showInactive, setShowInactive] = useState(false);
   const [res, setRes] = useState<{ total: number; options: Option[] } | null>(null);
   const [pick, setPick] = useState(0);
-  const [err, setErr] = useState(''); const [ok, setOk] = useState(''); const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(''); const [ok, setOk] = useState<{ msg: string; gameId: number } | null>(null); const [busy, setBusy] = useState(false);
   const filtered = useMemo(() => players.filter((p) => (showInactive || p.active || sel.includes(p.name)) && p.name.toLowerCase().includes(q.toLowerCase())), [players, q, showInactive, sel]);
   const sections = useMemo(() => {
     const regularNames = new Set(players.slice().sort((a, b) => b.recentGames - a.recentGames).slice(0, 10).filter((p) => p.recentGames > 0).map((p) => p.name));
@@ -26,10 +26,10 @@ export default function Matchmaker({ players, admin }: { players: P[]; admin: bo
     return { regulars, newPlayers, others };
   }, [players, filtered]);
   const shown = useMemo(() => [...sections.regulars, ...sections.newPlayers, ...sections.others], [sections]);
-  const toggle = (n: string) => { setRes(null); setOk(''); setSel((s) => (s.includes(n) ? s.filter((x) => x !== n) : s.length < 10 ? [...s, n] : s)); };
+  const toggle = (n: string) => { setRes(null); setOk(null); setSel((s) => (s.includes(n) ? s.filter((x) => x !== n) : s.length < 10 ? [...s, n] : s)); };
 
   async function generate() {
-    setBusy(true); setErr(''); setOk('');
+    setBusy(true); setErr(''); setOk(null);
     const r = await fetch('/api/matchmake', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ players: sel }) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setErr(j.error); setRes(null); return; }
@@ -41,7 +41,7 @@ export default function Matchmaker({ players, admin }: { players: P[]; admin: bo
     const r = await fetch('/api/matches', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setErr(j.error); return; }
-    setOk(`Saved — ${winner === 0 ? 'Blue' : 'Red'} won. MMRs updated.`); setRes(null); setSel([]); router.refresh();
+    setOk({ msg: `Saved — ${winner === 0 ? 'Blue' : 'Red'} won. MMRs updated.`, gameId: j.id }); setRes(null); setSel([]); router.refresh();
   }
   const side = (s: Side, label: string, cls: string) => (
     <div className={`card ${cls}`}>
@@ -66,7 +66,7 @@ export default function Matchmaker({ players, admin }: { players: P[]; admin: bo
           {sections.others.length > 0 && <div className="section"><div className="chips">{sections.others.map((p) => <span key={p.name} className={`chip ${sel.includes(p.name) ? 'on' : ''}`} onClick={() => toggle(p.name)}>{p.name}<small className={eloTier(p.mmr)}>{Math.round(p.mmr)}</small></span>)}</div></div>}
         </div>
       )}
-      {err && <div className="err">{err}</div>}{ok && <div className="ok">{ok}</div>}
+      {err && <div className="err">{err}</div>}{ok && <div className="ok">{ok.msg} <a href={`/games/${ok.gameId}/edit`}>View/Edit game</a></div>}
       {res && o && (<>
         <h2 style={{ margin: '14px 0 0' }}>Best of {res.total} valid splits</h2>
         <div className="row">{res.options.map((x, i) => <button key={i} className={i === pick ? 'primary' : ''} onClick={() => setPick(i)}>#{i + 1} · Δ{Math.round(x.delta)}</button>)}</div>
