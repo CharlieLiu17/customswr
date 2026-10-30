@@ -19,13 +19,15 @@ export default async function Games({ searchParams }: { searchParams: Promise<{ 
     <h1>Games {sp.player && <span className="pill">{sp.player} <Link href="/games">×</Link></span>}</h1>
     <p className="muted">{games.length} games, newest first. Page {page}/{pages}.</p>
     <div className="col">{games.slice((page - 1) * PER, page * PER).map((g) => {
-      const winners = g.filter((l) => l.result === 'W'), losers = g.filter((l) => l.result === 'L');
-      const line = (ls: typeof g, cls: string) => <div className="small"><span className={cls}>{cls === 'W' ? 'Won' : 'Lost'}</span>{' '}
-        {[...ls].sort((a, b) => ROLES.indexOf(a.role ?? 'Top') - ROLES.indexOf(b.role ?? 'Top')).map((l) => <span key={l.player} style={{ marginRight: 10 }}>{l.role ? ROLE_EMOJI[l.role] : ''}<Link href={`/players/${encodeURIComponent(l.player)}`}>{l.player}</Link></span>)}</div>;
+      const winners = g.filter((l) => l.result === 'W').sort((a, b) => ROLES.indexOf(a.role ?? 'Top') - ROLES.indexOf(b.role ?? 'Top'));
+      const losers = g.filter((l) => l.result === 'L').sort((a, b) => ROLES.indexOf(a.role ?? 'Top') - ROLES.indexOf(b.role ?? 'Top'));
       return (<div className="card" key={g[0].match_id}>
         <div className="row" style={{ justifyContent: 'space-between' }}><span><b>#{g[0].seq}</b> <span className="muted">{g[0].date}</span> {g[0].incomplete && <span className="pill warn" title="The sheet has fewer than 5 wins and 5 losses recorded for this game">incomplete</span>}</span>
           {admin && <span className="row"><Link className="btn" href={`/games/${g[0].match_id}/edit`}>Edit</Link><DeleteGame id={g[0].match_id} /></span>}</div>
-        {line(winners, 'W')}{line(losers, 'L')}</div>);
+        <table className="game-table"><tbody>
+          <tr><td className="W">W</td>{winners.map((l) => <td key={l.player}><span className="muted">{l.role ? ROLE_EMOJI[l.role] : ''}</span> <Link href={`/players/${encodeURIComponent(l.player)}`}>{l.player}</Link></td>)}</tr>
+          <tr><td className="L">L</td>{losers.map((l) => <td key={l.player}><span className="muted">{l.role ? ROLE_EMOJI[l.role] : ''}</span> <Link href={`/players/${encodeURIComponent(l.player)}`}>{l.player}</Link></td>)}</tr>
+        </tbody></table></div>);
     })}</div>
     <div className="row" style={{ marginTop: 14 }}>{page > 1 && <Link className="btn" href={q(page - 1)}>← Newer</Link>}{page < pages && <Link className="btn" href={q(page + 1)}>Older →</Link>}</div>
   </>);

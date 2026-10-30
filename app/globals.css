@@ -39,3 +39,4 @@ input:focus, select:focus { outline:2px solid var(--blue); outline-offset:-1px; 
 .bar { height:8px; border-radius:4px; background:var(--panel2); overflow:hidden; } .bar > i { display:block; height:100%; background:var(--blue); }
 .stat { font-size:26px; font-weight:700; } .statlabel { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
 .heat td { text-align:center; padding:5px 6px; font-size:12px; } .heat th { font-size:11px; padding:4px 6px; }
+.game-table { width:auto; margin-top:8px; } .game-table td { padding:4px 10px 4px 0; border:none; font-size:13px; } .game-table td:first-child { font-weight:600; width:24px; }
