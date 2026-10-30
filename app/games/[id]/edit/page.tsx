@@ -11,7 +11,7 @@ export default async function Edit({ params }: { params: Promise<{ id: string }>
   const slots = (team: 0 | 1) => ROLES.map((r) => g.find((l) => l.team === team && l.role === r)?.player ?? '');
   const winner = g.find((l) => l.result === 'W')?.team ?? null;
   return (<>
-    <h1>Edit game #{g[0].seq}</h1>
+    <div className="row" style={{ justifyContent: 'space-between' }}><h1>Edit game #{g[0].seq}</h1><a href="/games" className="btn close-btn">✕</a></div>
     {g[0].incomplete && <p className="muted">The sheet had incomplete data for this game (not 5 winners + 5 losers with roles). Fill in all 10 slots to complete it.</p>}
     <MatchForm admin={await isAdmin()} players={players.map((p) => ({ name: p.name, mmr: p.mmr, playable: p.playable_roles, active: p.active }))}
       initial={{ id, date: g[0].date, team0: slots(0), team1: slots(1), winner: winner as 0 | 1 | null }} />

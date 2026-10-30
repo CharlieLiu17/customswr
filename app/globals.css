@@ -17,6 +17,7 @@ th { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(-
 tbody tr:hover { background:var(--panel2); } .scroll { overflow-x:auto; }
 button, .btn { background:var(--panel2); color:var(--text); border:1px solid var(--line); padding:8px 14px; border-radius:8px; font:inherit; cursor:pointer; display:inline-block; }
 button:hover:not(:disabled), .btn:hover { border-color:var(--muted); text-decoration:none; } button:disabled { opacity:.45; cursor:not-allowed; }
+.close-btn { font-size:18px; padding:6px 12px; line-height:1; background:transparent; border-color:transparent; } .close-btn:hover { background:var(--panel2); border-color:var(--line); }
 button.primary { background:var(--blue); border-color:var(--blue); color:#fff; } button.blue { background:#1d3a73; border-color:var(--blue); } button.red { background:#6e2530; border-color:var(--red); } button.danger { color:var(--red); }
 button.big { padding:14px 20px; font-size:16px; font-weight:600; flex:1; }
 input, select { background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; max-width:100%; }
