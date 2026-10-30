@@ -40,8 +40,9 @@ export default function AdminPanel({ players }: { players: P[] }) {
 
 function Row({ p, run }: { p: P; run: (fn: () => Promise<unknown>, ok: string) => Promise<void> }) {
   const [v, setV] = useState(String(Math.round(p.mmr)));
+  const [editName, setEditName] = useState(p.name);
   const patch = (b: object, ok: string) => run(() => call(`/api/players/${p.id}`, 'PATCH', b), ok);
-  return (<tr style={{ opacity: p.active ? 1 : 0.55 }}><td>{p.name}</td><td className="num">{Math.round(p.mmr)}</td>
+  return (<tr style={{ opacity: p.active ? 1 : 0.55 }}><td className="row"><input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} style={{ width: 120 }} /><button disabled={editName.trim() === p.name} onClick={() => patch({ name: editName.trim() }, `Renamed to ${editName.trim()}`)}>Rename</button></td><td className="num">{Math.round(p.mmr)}</td>
     <td>{ROLES.map((r) => <label key={r} title={r} style={{ marginRight: 6, cursor: 'pointer', opacity: p.roles.includes(r) ? 1 : 0.3 }}>
       <input type="checkbox" hidden checked={p.roles.includes(r)} onChange={() => { const next = p.roles.includes(r) ? p.roles.filter((x) => x !== r) : [...p.roles, r]; if (next.length) patch({ playable_roles: next }, `${p.name} roles updated`); }} />{ROLE_EMOJI[r]}</label>)}</td>
     <td><select value={p.oneTrick ?? ''} onChange={(e) => patch({ one_trick_role: e.target.value || null }, `${p.name} one-trick updated`)}><option value="">—</option>{ROLES.map((r) => <option key={r}>{r}</option>)}</select></td>

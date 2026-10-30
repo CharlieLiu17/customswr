@@ -140,7 +140,12 @@ export async function createPlayer(p: NewPlayer) {
     args: [name, p.start_mmr, p.start_mmr, p.start_mmr, p.one_trick_role ?? null] });
   for (const role of p.playable_roles) await db().execute({ sql: 'INSERT INTO playable_roles VALUES (?,?)', args: [Number(r.lastInsertRowid), role] });
 }
-export async function updatePlayer(id: number, p: { playable_roles?: Role[]; one_trick_role?: Role | null; active?: boolean; start_mmr?: number }) {
+export async function updatePlayer(id: number, p: { name?: string; playable_roles?: Role[]; one_trick_role?: Role | null; active?: boolean; start_mmr?: number }) {
+  if (p.name !== undefined) {
+    const name = p.name.trim();
+    if (!name) throw new Error('Name required');
+    await db().execute({ sql: 'UPDATE players SET name=? WHERE id=?', args: [name, id] });
+  }
   if (p.one_trick_role !== undefined) await db().execute({ sql: 'UPDATE players SET one_trick_role=? WHERE id=?', args: [p.one_trick_role, id] });
   if (p.active !== undefined) await db().execute({ sql: 'UPDATE players SET active=? WHERE id=?', args: [p.active ? 1 : 0, id] });
   if (p.playable_roles) {
