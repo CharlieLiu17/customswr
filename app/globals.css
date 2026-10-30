@@ -21,6 +21,7 @@ button.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
 button.big { padding:14px 20px; font-size:16px; font-weight:600; flex:1; }
 input, select { background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; max-width:100%; }
 input:focus, select:focus { outline:2px solid var(--blue); outline-offset:-1px; }
+.input-hint { position:relative; display:inline-flex; } .input-hint input { padding-right:32px; } .input-hint kbd { position:absolute; right:8px; top:50%; transform:translateY(-50%); font:12px inherit; color:var(--muted); background:var(--line); padding:2px 6px; border-radius:4px; pointer-events:none; }
 .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; } .col { display:flex; flex-direction:column; gap:8px; }
 .W { color:var(--green); font-weight:600; } .L { color:var(--red); font-weight:600; }
 .pill { display:inline-block; padding:1px 8px; border-radius:99px; background:var(--panel2); border:1px solid var(--line); font-size:12px; color:var(--muted); }
@@ -29,7 +30,10 @@ input:focus, select:focus { outline:2px solid var(--blue); outline-offset:-1px; 
 .slot { display:grid; grid-template-columns:34px 1fr; gap:8px; align-items:center; margin:6px 0; } .slot select { width:100%; }
 .err { color:var(--red); margin:8px 0; } .ok { color:var(--green); margin:8px 0; }
 .chips { display:flex; flex-wrap:wrap; gap:6px; } .chip { padding:6px 10px; border-radius:99px; border:1px solid var(--line); background:var(--panel2); cursor:pointer; user-select:none; }
-.chip.on { background:#1d3a73; border-color:var(--blue); } .chip small { color:var(--muted); margin-left:4px; }
+.sections { display:flex; flex-direction:column; gap:12px; } .section { display:flex; flex-direction:column; gap:6px; } .section + .section { border-top:1px solid var(--line); padding-top:12px; } .section-label { font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.chip.on { background:#1d3a73; border-color:var(--blue); } .chip.highlight { outline:2px solid var(--blue); outline-offset:-1px; }
+.chip small { margin-left:6px; padding:2px 6px; border-radius:4px; font-size:11px; }
+.chip small.elo-high { background:var(--blue); color:#fff; } .chip small.elo-mid { background:var(--panel); color:#fff; } .chip small.elo-low { background:#e8eaf0; color:#1a1a1a; }
 .bar { height:8px; border-radius:4px; background:var(--panel2); overflow:hidden; } .bar > i { display:block; height:100%; background:var(--blue); }
 .stat { font-size:26px; font-weight:700; } .statlabel { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
 .heat td { text-align:center; padding:5px 6px; font-size:12px; } .heat th { font-size:11px; padding:4px 6px; }
