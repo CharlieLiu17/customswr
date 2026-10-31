@@ -48,7 +48,7 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:-1p
 .err { color:var(--red); margin:8px 0; } .ok { color:var(--green); margin:8px 0; }
 .side-pick-banner { background:#2a9d6a; color:#fff; text-align:center; padding:6px 12px; border-radius:6px; font-size:14px; }
 .draft-btn { background:#c8a774; color:#000; border-color:#c8a774; display:flex; align-items:center; justify-content:center; width:100%; }
-.chips { display:flex; flex-wrap:wrap; gap:6px; } .chips-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:6px; } .chip { padding:6px 10px; border-radius:99px; border:1px solid var(--line); background:var(--panel2); cursor:pointer; user-select:none; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; } .chips-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(max(140px, calc((100% - 18px) / 4)), 1fr)); gap:6px; } .chip { padding:6px 10px; border-radius:99px; border:1px solid var(--line); background:var(--panel2); cursor:pointer; user-select:none; }
 .sections { display:flex; flex-direction:column; gap:12px; } .section { display:flex; flex-direction:column; gap:6px; } .section + .section { border-top:1px solid var(--line); padding-top:12px; } .section-label { font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
 .chip.on { background:var(--primary-dark); border-color:var(--primary); } .chip.highlight { outline:2px solid var(--primary); outline-offset:-1px; }
 .chip small { margin-left:6px; padding:2px 6px; border-radius:4px; font-size:11px; }
