@@ -29,6 +29,10 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null);
   const [animKey, setAnimKey] = useState(0);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [modalTeams, setModalTeams] = useState<{ a: Side['players']; b: Side['players'] } | null>(null);
+  const [grabbed, setGrabbed] = useState<{ team: 0 | 1; idx: number } | null>(null);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -71,13 +75,41 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     if (!r.ok) { setErr(j.error); setRes(null); return; }
     setRes(j); if (resetPick) setPick(0);
   }
+  function openRecordModal() {
+    if (!res) return;
+    const o = res.options[pick];
+    setModalTeams({ a: [...o.a.players], b: [...o.b.players] });
+    setEditMode(false);
+    setGrabbed(null);
+    setModalOpen(true);
+  }
+
+  function handleGrab(team: 0 | 1, idx: number) {
+    if (!modalTeams) return;
+    if (!grabbed) { setGrabbed({ team, idx }); return; }
+    const srcTeam = grabbed.team === 0 ? [...modalTeams.a] : [...modalTeams.b];
+    const dstTeam = team === 0 ? [...modalTeams.a] : [...modalTeams.b];
+    const srcPlayer = srcTeam[grabbed.idx];
+    const dstPlayer = dstTeam[idx];
+    if (grabbed.team === team) {
+      srcTeam[grabbed.idx] = { ...dstPlayer, role: srcPlayer.role };
+      srcTeam[idx] = { ...srcPlayer, role: dstPlayer.role };
+      setModalTeams(grabbed.team === 0 ? { a: srcTeam, b: modalTeams.b } : { a: modalTeams.a, b: srcTeam });
+    } else {
+      srcTeam[grabbed.idx] = { ...dstPlayer, role: srcPlayer.role };
+      dstTeam[idx] = { ...srcPlayer, role: dstPlayer.role };
+      setModalTeams({ a: grabbed.team === 0 ? srcTeam : dstTeam, b: grabbed.team === 1 ? srcTeam : dstTeam });
+    }
+    setGrabbed(null);
+  }
+
   async function record(winner: 0 | 1) {
-    if (!res) return; const o = res.options[pick]; setBusy(true); setErr('');
-    const body = { date: new Date().toLocaleDateString('en-CA'), winner, team0: o.a.players.map(({ name, role }) => ({ player: name, role })), team1: o.b.players.map(({ name, role }) => ({ player: name, role })) };
+    if (!modalTeams) return; setBusy(true); setErr('');
+    const body = { date: new Date().toLocaleDateString('en-CA'), winner, team0: modalTeams.a.map(({ name, role }) => ({ player: name, role })), team1: modalTeams.b.map(({ name, role }) => ({ player: name, role })) };
     const r = await fetch('/api/matches', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setErr(j.error); return; }
-    setOk({ msg: `Saved — Team ${winner + 1} won. MMRs updated.`, gameId: j.id }); setRes(null); router.refresh();
+    setModalOpen(false); setOk({ msg: `Saved — Team ${winner + 1} won. MMRs updated.`, gameId: j.id }); setRes(null); router.refresh();
   }
 
   function copyLink() {
@@ -166,10 +198,40 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
           <div className="side-pick-banner">Delta is <b>{Math.round(o.delta)}</b>. Team {o.a.total < o.b.total ? '1' : '2'} is lower, so <b>Team {o.a.total < o.b.total ? '1' : '2'}</b> gets to choose side.</div>
           <div className="grid g2">{side(o.a, 'Team 1', 'team-blue')}{side(o.b, 'Team 2', 'team-red')}</div>
         </div>
-        <a href="https://drafter.lol" target="_blank" rel="noopener noreferrer" className="btn draft-btn">Draft<OpenInNewIcon style={{ fontSize: 16, marginLeft: 6 }} /></a>
-        <div className="row"><button className="big blue" disabled={busy || !admin} onClick={() => record(0)}>Team 1 won</button><button className="big red" disabled={busy || !admin} onClick={() => record(1)}>Team 2 won</button></div>
+        <div className="row action-row">
+          <a href="https://drafter.lol" target="_blank" rel="noopener noreferrer" className="btn action-btn draft-btn">Draft<OpenInNewIcon style={{ fontSize: 16, marginLeft: 6 }} /></a>
+          <button className="action-btn record-btn" disabled={busy || !admin} onClick={openRecordModal}>Record Game</button>
+        </div>
         {!admin && <div className="muted small"><a href="/admin">Log in as admin</a> to record the result.</div>}
       </div>)}
+      {modalOpen && modalTeams && (
+        <div className="modal-overlay" onClick={() => setModalOpen(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Record Game</h2>
+            {!editMode ? (
+              <>
+                <div className="grid g2" style={{ marginBottom: 16 }}>
+                  <div className="card team-blue"><b>Team 1</b><table><tbody>{modalTeams.a.map((p) => <tr key={p.name}><td>{ROLE_EMOJI[p.role]}</td><td>{p.name}</td></tr>)}</tbody></table></div>
+                  <div className="card team-red"><b>Team 2</b><table><tbody>{modalTeams.b.map((p) => <tr key={p.name}><td>{ROLE_EMOJI[p.role]}</td><td>{p.name}</td></tr>)}</tbody></table></div>
+                </div>
+                <p className="muted">Do you want to make any changes to the roles?</p>
+                <div className="row" style={{ marginBottom: 16 }}><button onClick={() => setEditMode(true)}>Yes, edit roles</button><button className="primary" onClick={() => setEditMode(false)}>No, continue</button></div>
+                {!editMode && <div className="row"><button className="big blue" disabled={busy} onClick={() => record(0)}>Team 1 won</button><button className="big red" disabled={busy} onClick={() => record(1)}>Team 2 won</button></div>}
+              </>
+            ) : (
+              <>
+                <div className="grid g2" style={{ marginBottom: 16 }}>
+                  <div className="card team-blue"><b>Team 1</b><table><tbody>{modalTeams.a.map((p, i) => <tr key={p.name}><td>{ROLE_EMOJI[p.role]}</td><td>{p.name}</td><td><button className={`grab ${grabbed?.team === 0 && grabbed?.idx === i ? 'on' : ''}`} onClick={() => handleGrab(0, i)}>⇅</button></td></tr>)}</tbody></table></div>
+                  <div className="card team-red"><b>Team 2</b><table><tbody>{modalTeams.b.map((p, i) => <tr key={p.name}><td>{ROLE_EMOJI[p.role]}</td><td>{p.name}</td><td><button className={`grab ${grabbed?.team === 1 && grabbed?.idx === i ? 'on' : ''}`} onClick={() => handleGrab(1, i)}>⇅</button></td></tr>)}</tbody></table></div>
+                </div>
+                <p className="muted small">To replace a player entirely, use the <a href="/games">Edit Game</a> screen after recording.</p>
+                <div className="row" style={{ marginBottom: 16 }}><button onClick={() => { setEditMode(false); setGrabbed(null); }}>Done editing</button></div>
+                <div className="row"><button className="big blue" disabled={busy} onClick={() => record(0)}>Team 1 won</button><button className="big red" disabled={busy} onClick={() => record(1)}>Team 2 won</button></div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
