@@ -127,7 +127,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
       </div>
       {err && <div className="err">{err}</div>}{ok && <div className="ok">{ok.msg} <a href={`/games/${ok.gameId}/edit`}>View/Edit game</a></div>}
       {res && o && (<div className="results-enter">
-        <h2 style={{ margin: '14px 0 0' }}>Best of {res.total} valid splits</h2>
+        <h2 style={{ margin: '14px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>Best of {res.total} valid splits <span className="info-hint"><InfoOutlinedIcon style={{ fontSize: 16, color: 'var(--muted)' }} /><span className="info-tooltip" style={{ width: 260, whiteSpace: 'normal' }}>Of 126 ways to split 10 players, only {res.total} passed: each team can fill all 5 roles, no two same-role one-tricks together, and estimated win rates under 56%.</span></span></h2>
         <div className="row">{res.options.map((x, i) => <span key={i} className="option-wrap"><button className={i === pick ? 'primary' : ''} onClick={() => selectPick(i)}>{i + 1}</button><span className="option-tooltip">Δ {Math.round(x.delta)}</span></span>)}
           <span className="info-hint"><InfoOutlinedIcon style={{ fontSize: 16, color: 'var(--muted)' }} /><span className="info-tooltip">Use ← → keys to navigate</span></span>
           <span style={{ flex: 1 }} />
