@@ -8,7 +8,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SettingsIcon from '@mui/icons-material/Settings';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
-interface P { name: string; mmr: number; active: boolean; games: number; recentGames: number }
+interface P { name: string; mmr: number; active: boolean; games: number; recentGames: number; last10: { w: number; l: number } }
 interface Side { players: { name: string; mmr: number; role: Role }[]; total: number; synergy: number | null; against: number | null; estimate: number | null }
 interface Option { delta: number; a: Side; b: Side }
 const pct = (x: number | null) => (x === null ? '—' : (x * 100).toFixed(1) + '%');
@@ -98,10 +98,34 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     setCopied('text'); setTimeout(() => setCopied(null), 2000);
   }
 
+  const RingChart = ({ w, l }: { w: number; l: number }) => {
+    const total = w + l || 1;
+    const winPct = w / total;
+    const r = 18, cx = 24, cy = 24, stroke = 6;
+    const circ = 2 * Math.PI * r;
+    const winDash = circ * winPct, lossDash = circ * (1 - winPct);
+    return (
+      <svg width="48" height="48" viewBox="0 0 48 48">
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--red)" strokeWidth={stroke} />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--green)" strokeWidth={stroke}
+          strokeDasharray={`${winDash} ${lossDash}`} strokeDashoffset={circ / 4} />
+        <text x={cx} y={cy + 4} textAnchor="middle" fill="var(--text)" fontSize="11" fontWeight="600">{w}-{l}</text>
+      </svg>
+    );
+  };
   const side = (s: Side, label: string, cls: string) => (
     <div className={`card ${cls}`}>
       <div className="row" style={{ justifyContent: 'space-between' }}><b>{label}</b><span className="muted">Σ {Math.round(s.total)} · avg {Math.round(s.total / 5)}</span></div>
-      <table><tbody>{s.players.map((p) => <tr key={p.name}><td>{ROLE_EMOJI[p.role]} <span className="muted small">{p.role}</span></td><td>{p.name}</td><td className="num">{Math.round(p.mmr)}</td></tr>)}</tbody></table>
+      <table><tbody>{s.players.map((p) => {
+        const pl = players.find((x) => x.name === p.name);
+        return (
+          <tr key={p.name}>
+            <td>{ROLE_EMOJI[p.role]} <span className="muted small">{p.role}</span></td>
+            <td><span className="player-hover"><a href={`/players/${encodeURIComponent(p.name)}`} target="_blank" rel="noopener noreferrer">{p.name}</a>{pl && <span className="player-tooltip"><RingChart w={pl.last10.w} l={pl.last10.l} /><span className="muted small">Last 10</span></span>}</span></td>
+            <td className="num">{Math.round(p.mmr)}</td>
+          </tr>
+        );
+      })}</tbody></table>
       <div className="small muted" style={{ marginTop: 8 }}>Synergy WR {pct(s.synergy)} · Against WR {pct(s.against)} · <b style={{ color: 'var(--text)' }}>Est. {pct(s.estimate)}</b></div>
     </div>
   );

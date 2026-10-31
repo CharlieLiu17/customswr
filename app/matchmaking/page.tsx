@@ -78,10 +78,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const recentSet = new Set(recentSeqs);
   const recentGames = new Map<string, number>();
   for (const l of lines) if (recentSet.has(l.seq)) recentGames.set(l.player, (recentGames.get(l.player) ?? 0) + 1);
+  // Calculate last 10 games W/L for each player
+  const last10 = new Map<string, { w: number; l: number }>();
+  const byPlayer = new Map<string, typeof lines>();
+  for (const l of lines) { const arr = byPlayer.get(l.player) ?? []; arr.push(l); byPlayer.set(l.player, arr); }
+  for (const [name, pLines] of byPlayer) {
+    const recent = pLines.sort((a, b) => b.seq - a.seq).slice(0, 10);
+    const w = recent.filter((l) => l.result === 'W').length;
+    last10.set(name, { w, l: recent.length - w });
+  }
   const playerNames = players.map((p) => p.name);
   const { names, pick } = parseParams(sp, playerNames);
   const initialPlayers = names.filter((n) => players.some((p) => p.name === n));
   const initialPick = pick;
   return (<><h1>Matchmaking</h1>
-    <Matchmaker admin={await isAdmin()} players={players.map((p) => ({ name: p.name, mmr: p.mmr, active: p.active, games: games.get(p.name) ?? 0, recentGames: recentGames.get(p.name) ?? 0 }))} initialSelection={initialPlayers} initialPick={initialPick} /></>);
+    <Matchmaker admin={await isAdmin()} players={players.map((p) => ({ name: p.name, mmr: p.mmr, active: p.active, games: games.get(p.name) ?? 0, recentGames: recentGames.get(p.name) ?? 0, last10: last10.get(p.name) ?? { w: 0, l: 0 } }))} initialSelection={initialPlayers} initialPick={initialPick} /></>);
 }
