@@ -1,7 +1,10 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROLE_EMOJI, type Role } from '@/lib/types';
+import LinkIcon from '@mui/icons-material/Link';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 interface P { name: string; mmr: number; active: boolean; games: number; recentGames: number }
 interface Side { players: { name: string; mmr: number; role: Role }[]; total: number; synergy: number | null; against: number | null; estimate: number | null }
@@ -9,13 +12,14 @@ interface Option { delta: number; a: Side; b: Side }
 const pct = (x: number | null) => (x === null ? '—' : (x * 100).toFixed(1) + '%');
 const eloTier = (mmr: number) => mmr >= 1400 ? 'elo-high' : mmr >= 1100 ? 'elo-mid' : 'elo-low';
 
-export default function Matchmaker({ players, admin }: { players: P[]; admin: boolean }) {
+export default function Matchmaker({ players, admin, initialSelection = [], initialPick = 0 }: { players: P[]; admin: boolean; initialSelection?: string[]; initialPick?: number }) {
   const router = useRouter();
-  const [sel, setSel] = useState<string[]>([]);
+  const [sel, setSel] = useState<string[]>(initialSelection);
+  const [copied, setCopied] = useState<'link' | 'text' | null>(null);
   const [q, setQ] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [res, setRes] = useState<{ total: number; options: Option[] } | null>(null);
-  const [pick, setPick] = useState(0);
+  const [pick, setPick] = useState(initialPick);
   const [err, setErr] = useState(''); const [ok, setOk] = useState<{ msg: string; gameId: number } | null>(null); const [busy, setBusy] = useState(false);
   const filtered = useMemo(() => players.filter((p) => (showInactive || p.active || sel.includes(p.name)) && p.name.toLowerCase().includes(q.toLowerCase())), [players, q, showInactive, sel]);
   const sections = useMemo(() => {
@@ -28,12 +32,17 @@ export default function Matchmaker({ players, admin }: { players: P[]; admin: bo
   const shown = useMemo(() => [...sections.regulars, ...sections.newPlayers, ...sections.others], [sections]);
   const toggle = (n: string) => { setRes(null); setOk(null); setSel((s) => (s.includes(n) ? s.filter((x) => x !== n) : s.length < 10 ? [...s, n] : s)); };
 
-  async function generate() {
+  // Auto-generate if loaded with 10 players from URL
+  useEffect(() => {
+    if (initialSelection.length === 10 && !res) generate(false);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function generate(resetPick = true) {
     setBusy(true); setErr(''); setOk(null);
     const r = await fetch('/api/matchmake', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ players: sel }) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setErr(j.error); setRes(null); return; }
-    setRes(j); setPick(0);
+    setRes(j); if (resetPick) setPick(0);
   }
   async function record(winner: 0 | 1) {
     if (!res) return; const o = res.options[pick]; setBusy(true); setErr('');
@@ -41,8 +50,26 @@ export default function Matchmaker({ players, admin }: { players: P[]; admin: bo
     const r = await fetch('/api/matches', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setErr(j.error); return; }
-    setOk({ msg: `Saved — ${winner === 0 ? 'Blue' : 'Red'} won. MMRs updated.`, gameId: j.id }); setRes(null); setSel([]); router.refresh();
+    setOk({ msg: `Saved — Team ${winner + 1} won. MMRs updated.`, gameId: j.id }); setRes(null); setSel([]); router.refresh();
   }
+
+  function copyLink() {
+    const url = `${window.location.origin}/matchmaking?p=${sel.join(',')}&m=${pick}`;
+    navigator.clipboard.writeText(url);
+    setCopied('link'); setTimeout(() => setCopied(null), 2000);
+  }
+
+  function copyText() {
+    if (!res) return;
+    const o = res.options[pick];
+    const formatTeam = (side: Side, num: number) =>
+      `**Team ${num}** (${Math.round(side.total)} MMR)\n` +
+      side.players.map((p) => `${ROLE_EMOJI[p.role]} ${p.name}`).join('\n');
+    const text = `**Customs Match**\n\n${formatTeam(o.a, 1)}\n\n${formatTeam(o.b, 2)}\n\nMMR Gap: ${Math.round(o.delta)}`;
+    navigator.clipboard.writeText(text);
+    setCopied('text'); setTimeout(() => setCopied(null), 2000);
+  }
+
   const side = (s: Side, label: string, cls: string) => (
     <div className={`card ${cls}`}>
       <div className="row" style={{ justifyContent: 'space-between' }}><b>{label}</b><span className="muted">Σ {Math.round(s.total)} · avg {Math.round(s.total / 5)}</span></div>
@@ -69,10 +96,14 @@ export default function Matchmaker({ players, admin }: { players: P[]; admin: bo
       {err && <div className="err">{err}</div>}{ok && <div className="ok">{ok.msg} <a href={`/games/${ok.gameId}/edit`}>View/Edit game</a></div>}
       {res && o && (<>
         <h2 style={{ margin: '14px 0 0' }}>Best of {res.total} valid splits</h2>
-        <div className="row">{res.options.map((x, i) => <button key={i} className={i === pick ? 'primary' : ''} onClick={() => setPick(i)}>#{i + 1} · Δ{Math.round(x.delta)}</button>)}</div>
-        <div className="grid g2">{side(o.a, '🔵 Blue', 'team-blue')}{side(o.b, '🔴 Red', 'team-red')}</div>
-        <div className="muted small">MMR gap {Math.round(o.delta)}. Estimates average the teammates' historical pairwise WR and each player's WR versus the other team's players.</div>
-        <div className="row"><button className="big blue" disabled={busy || !admin} onClick={() => record(0)}>Blue won</button><button className="big red" disabled={busy || !admin} onClick={() => record(1)}>Red won</button></div>
+        <div className="row">{res.options.map((x, i) => <button key={i} className={i === pick ? 'primary' : ''} onClick={() => setPick(i)}>{i + 1}</button>)}
+          <span style={{ flex: 1 }} />
+          <button onClick={copyLink}>{copied === 'link' ? 'Copied!' : <><LinkIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Link</>}</button>
+          <button onClick={copyText}>{copied === 'text' ? 'Copied!' : <><ContentCopyIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Text</>}</button></div>
+        <div className="side-pick-banner">Delta is <b>{Math.round(o.delta)}</b>. Team {o.a.total < o.b.total ? '1' : '2'} is lower, so <b>Team {o.a.total < o.b.total ? '1' : '2'}</b> gets to choose side.</div>
+        <div className="grid g2">{side(o.a, 'Team 1', 'team-blue')}{side(o.b, 'Team 2', 'team-red')}</div>
+        <a href="https://drafter.lol" target="_blank" rel="noopener noreferrer" className="btn draft-btn">Draft<OpenInNewIcon style={{ fontSize: 16, marginLeft: 6 }} /></a>
+        <div className="row"><button className="big blue" disabled={busy || !admin} onClick={() => record(0)}>Team 1 won</button><button className="big red" disabled={busy || !admin} onClick={() => record(1)}>Team 2 won</button></div>
         {!admin && <div className="muted small"><a href="/admin">Log in as admin</a> to record the result.</div>}
       </>)}
     </div>
