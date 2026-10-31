@@ -98,8 +98,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
             <div className="settings-row"><span>Show inactive</span><button className={`toggle ${showInactive ? 'on' : ''}`} onClick={() => setShowInactive(!showInactive)}><span className="toggle-knob" /></button></div>
           </div>}
         </div>
-        <span style={{ flex: 1 }} /><b>{sel.length}/10</b><button onClick={() => { setSel([]); setRes(null); }}>Clear</button>
-        <button className="primary" disabled={sel.length !== 10 || busy} onClick={() => generate()}>Generate teams</button></div>
+        <span style={{ flex: 1 }} /><b>{sel.length}/10</b><button onClick={() => { setSel([]); setRes(null); }}>Clear</button></div>
       {q ? (
         <div className="chips">{shown.map((p, i) => <span key={p.name} className={`chip ${sel.includes(p.name) ? 'on' : ''} ${i === 0 ? 'highlight' : ''}`} onClick={() => toggle(p.name)}>{p.name}<small className={eloTier(p.mmr)}>{Math.round(p.mmr)}</small></span>)}</div>
       ) : (
@@ -109,6 +108,9 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
           {sections.others.length > 0 && <div className="section"><div className="chips">{sections.others.map((p) => <span key={p.name} className={`chip ${sel.includes(p.name) ? 'on' : ''}`} onClick={() => toggle(p.name)}>{p.name}<small className={eloTier(p.mmr)}>{Math.round(p.mmr)}</small></span>)}</div></div>}
         </div>
       )}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+        <button className="generate-btn" disabled={sel.length !== 10 || busy} onClick={() => generate()}>Generate teams</button>
+      </div>
       {err && <div className="err">{err}</div>}{ok && <div className="ok">{ok.msg} <a href={`/games/${ok.gameId}/edit`}>View/Edit game</a></div>}
       {res && o && (<>
         <h2 style={{ margin: '14px 0 0' }}>Best of {res.total} valid splits</h2>
