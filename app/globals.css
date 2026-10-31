@@ -30,6 +30,7 @@ h1 { font-size:24px; margin:4px 0 14px; } h2 { font-size:17px; margin:26px 0 10p
 table { width:100%; border-collapse:collapse; } th,td { padding:7px 10px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap; }
 th { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; } td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
 tbody tr:hover { background:var(--panel2); } .scroll { overflow-x:auto; }
+tbody td a { color:var(--text); } tbody td a:hover { color:var(--primary); }
 button, .btn { background:var(--panel2); color:var(--text); border:1px solid var(--line); padding:8px 14px; border-radius:8px; font:inherit; cursor:pointer; display:inline-block; }
 button:hover:not(:disabled), .btn:hover { border-color:var(--muted); text-decoration:none; } button:disabled { opacity:.45; cursor:not-allowed; }
 .close-btn { font-size:18px; padding:6px 12px; line-height:1; background:transparent; border-color:transparent; } .close-btn:hover { background:var(--panel2); border-color:var(--line); }

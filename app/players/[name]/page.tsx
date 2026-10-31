@@ -12,7 +12,7 @@ function Spark({ pts }: { pts: number[] }) {
   const w = 600, h = 120, min = Math.min(...pts), max = Math.max(...pts), pad = 6;
   const x = (i: number) => pad + (i / (pts.length - 1)) * (w - 2 * pad), y = (v: number) => h - pad - ((v - min) / Math.max(1, max - min)) * (h - 2 * pad);
   return (<svg viewBox={`0 0 ${w} ${h}`} width="100%" height="120" role="img" aria-label="MMR over time">
-    <polyline fill="none" stroke="var(--blue)" strokeWidth="2" points={pts.map((v, i) => `${x(i)},${y(v)}`).join(' ')} />
+    <polyline fill="none" stroke="var(--primary)" strokeWidth="2" points={pts.map((v, i) => `${x(i)},${y(v)}`).join(' ')} />
     <text x={pad} y={12} fill="var(--muted)" fontSize="11">{Math.round(max)}</text><text x={pad} y={h - 2} fill="var(--muted)" fontSize="11">{Math.round(min)}</text></svg>);
 }
 
