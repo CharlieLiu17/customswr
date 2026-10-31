@@ -1,12 +1,13 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Nav({ admin }: { admin: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <nav className={open ? 'open' : ''}>
-      <Link href="/" className="brand">⚔️ Customs WR</Link>
+      <Link href="/" className="brand"><Image src="/favicon-32x32.png" alt="" width={20} height={20} style={{ marginRight: 6, verticalAlign: 'middle' }} />Customs WR</Link>
       <button className="hamburger" onClick={() => setOpen(!open)} aria-label="Toggle menu">
         <span /><span /><span />
       </button>
