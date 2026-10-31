@@ -13,6 +13,20 @@ export default async function Records({ searchParams }: { searchParams: Promise<
   const dir = sp.dir === 'asc' ? 'asc' : 'desc';
   const { players, lines } = await load();
   const sum = summarize(lines);
+  // Calculate MMR change for players in the latest game only
+  const lastChange = new Map<string, number>();
+  const latestSeq = Math.max(...lines.map((l) => l.seq));
+  const latestGamePlayers = lines.filter((l) => l.seq === latestSeq);
+  for (const l of latestGamePlayers) {
+    const p = players.find((p) => p.name === l.player);
+    if (!p || l.mmr_after == null) continue;
+    const prevLines = lines.filter((x) => x.player === l.player && x.seq < latestSeq && x.mmr_after != null).sort((a, b) => b.seq - a.seq);
+    if (prevLines.length > 0) {
+      lastChange.set(l.player, l.mmr_after - prevLines[0].mmr_after!);
+    } else {
+      lastChange.set(l.player, l.mmr_after - p.start_mmr);
+    }
+  }
   const rows = players.filter((p) => p.active).map((p) => ({ p, s: sum.get(p.name) })).filter((r) => sp.all || (r.s && r.s.games > 0));
   const key = (r: (typeof rows)[number]) => (sort === 'mmr' ? r.p.mmr : sort === 'wr' ? (r.s?.wr ?? -1) : sort === 'games' ? (r.s?.games ?? 0) : sort === 'wins' ? (r.s?.wins ?? 0) : sort === 'losses' ? (r.s?.losses ?? 0) : sort === 'fill' ? (r.s?.fill ?? -1) : r.p.name.toLowerCase());
   const cmp = dir === 'desc' ? (a: any, b: any) => (key(a) > key(b) ? -1 : key(a) < key(b) ? 1 : 0) : (a: any, b: any) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0);
@@ -33,7 +47,7 @@ export default async function Records({ searchParams }: { searchParams: Promise<
           <td className="muted">{i + 1}</td>
           <td><Link href={`/players/${encodeURIComponent(p.name)}`}>{p.name}</Link>{p.mmr === topMmr && ' 👑'}{p.one_trick_role && <span className="pill" style={{ marginLeft: 6 }}>OTP {ROLE_EMOJI[p.one_trick_role]}</span>}</td>
           <td>{ROLES.filter((r) => p.playable_roles.includes(r)).map((r) => ROLE_EMOJI[r]).join('')}</td>
-          <td className="num"><b>{Math.round(p.mmr)}</b></td><td className="num W">{s?.wins ?? 0}</td><td className="num L">{s?.losses ?? 0}</td>
+          <td className="num"><b>{Math.round(p.mmr)}</b>{lastChange.has(p.name) && <span className={lastChange.get(p.name)! >= 0 ? 'W' : 'L'} style={{ marginLeft: 6, fontSize: 12 }}>{lastChange.get(p.name)! >= 0 ? '+' : ''}{Math.round(lastChange.get(p.name)!)}</span>}</td><td className="num W">{s?.wins ?? 0}</td><td className="num L">{s?.losses ?? 0}</td>
           <td className="num">{pct(s?.wr)}</td><td className="num">{s?.games ?? 0}</td><td className="num">{pct(s?.fill, 0)}</td>
         </tr>))}</tbody>
     </table></div>
