@@ -2,7 +2,9 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROLE_EMOJI, type Role } from '@/lib/types';
+import html2canvas from 'html2canvas';
 import LinkIcon from '@mui/icons-material/Link';
+import ImageIcon from '@mui/icons-material/Image';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -17,7 +19,8 @@ const eloTier = (mmr: number) => mmr >= 1400 ? 'elo-high' : mmr >= 1100 ? 'elo-m
 export default function Matchmaker({ players, admin, initialSelection = [], initialPick = 0 }: { players: P[]; admin: boolean; initialSelection?: string[]; initialPick?: number }) {
   const router = useRouter();
   const [sel, setSel] = useState<string[]>(initialSelection);
-  const [copied, setCopied] = useState<'link' | 'text' | null>(null);
+  const [copied, setCopied] = useState<'link' | 'text' | 'image' | null>(null);
+  const captureRef = useRef<HTMLDivElement>(null);
   const [q, setQ] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [res, setRes] = useState<{ total: number; options: Option[] } | null>(null);
@@ -98,6 +101,16 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     setCopied('text'); setTimeout(() => setCopied(null), 2000);
   }
 
+  async function copyImage() {
+    if (!captureRef.current) return;
+    const canvas = await html2canvas(captureRef.current, { backgroundColor: '#0f1115', scale: 2 });
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setCopied('image'); setTimeout(() => setCopied(null), 2000);
+    });
+  }
+
   const RingChart = ({ w, l }: { w: number; l: number }) => {
     const total = w + l || 1;
     const winPct = w / total;
@@ -159,8 +172,9 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
           <span className="info-hint"><InfoOutlinedIcon style={{ fontSize: 16, color: 'var(--muted)' }} /><span className="info-tooltip">Use ← → keys to navigate</span></span>
           <span style={{ flex: 1 }} />
           <button onClick={copyLink}>{copied === 'link' ? 'Copied!' : <><LinkIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Link</>}</button>
+          <button onClick={copyImage}>{copied === 'image' ? 'Copied!' : <><ImageIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Image</>}</button>
           <button onClick={copyText}>{copied === 'text' ? 'Copied!' : <><ContentCopyIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Text</>}</button></div>
-        <div key={animKey} className={`pick-content ${slideDir === 'left' ? 'slide-left' : slideDir === 'right' ? 'slide-right' : ''}`}>
+        <div ref={captureRef} key={animKey} className={`pick-content ${slideDir === 'left' ? 'slide-left' : slideDir === 'right' ? 'slide-right' : ''}`}>
           <div className="side-pick-banner">Delta is <b>{Math.round(o.delta)}</b>. Team {o.a.total < o.b.total ? '1' : '2'} is lower, so <b>Team {o.a.total < o.b.total ? '1' : '2'}</b> gets to choose side.</div>
           <div className="grid g2">{side(o.a, 'Team 1', 'team-blue')}{side(o.b, 'Team 2', 'team-red')}</div>
         </div>
