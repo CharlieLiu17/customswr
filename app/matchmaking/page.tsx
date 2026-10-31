@@ -20,11 +20,12 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     const counts = new Map<string, Partial<Record<Role, number>>>();
     for (const l of lines) if (l.role) { const c = counts.get(l.player) ?? {}; c[l.role] = (c[l.role] ?? 0) + 1; counts.set(l.player, c); }
 
-    const pool: MMPlayer[] = names.map((n) => {
+    const pool: MMPlayer[] = [];
+    for (const n of names) {
       const p = byName.get(n);
-      if (!p) return null;
-      return { name: p.name, mmr: p.mmr, playable: p.playable_roles, oneTrick: p.one_trick_role, roleCounts: counts.get(n) };
-    }).filter((p): p is MMPlayer => p !== null);
+      if (!p) continue;
+      pool.push({ name: p.name, mmr: p.mmr, playable: p.playable_roles, oneTrick: p.one_trick_role, roleCounts: counts.get(n) });
+    }
 
     if (pool.length !== 10) return { title: 'Matchmaking' };
 
