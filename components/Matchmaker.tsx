@@ -6,6 +6,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SettingsIcon from '@mui/icons-material/Settings';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 interface P { name: string; mmr: number; active: boolean; games: number; recentGames: number }
 interface Side { players: { name: string; mmr: number; role: Role }[]; total: number; synergy: number | null; against: number | null; estimate: number | null }
@@ -34,6 +35,16 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     if (settingsOpen) document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, [settingsOpen]);
+
+  useEffect(() => {
+    if (!res) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && pick > 0) selectPick(pick - 1);
+      if (e.key === 'ArrowRight' && pick < res.options.length - 1) selectPick(pick + 1);
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  });
   const filtered = useMemo(() => players.filter((p) => (showInactive || p.active || sel.includes(p.name)) && p.name.toLowerCase().includes(q.toLowerCase())), [players, q, showInactive, sel]);
   const sections = useMemo(() => {
     const regularNames = new Set(players.slice().sort((a, b) => b.recentGames - a.recentGames).slice(0, 12).filter((p) => p.recentGames > 0).map((p) => p.name));
@@ -118,6 +129,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
       {res && o && (<div className="results-enter">
         <h2 style={{ margin: '14px 0 0' }}>Best of {res.total} valid splits</h2>
         <div className="row">{res.options.map((x, i) => <span key={i} className="option-wrap"><button className={i === pick ? 'primary' : ''} onClick={() => selectPick(i)}>{i + 1}</button><span className="option-tooltip">Δ {Math.round(x.delta)}</span></span>)}
+          <span className="info-hint"><InfoOutlinedIcon style={{ fontSize: 16, color: 'var(--muted)' }} /><span className="info-tooltip">Use ← → keys to navigate</span></span>
           <span style={{ flex: 1 }} />
           <button onClick={copyLink}>{copied === 'link' ? 'Copied!' : <><LinkIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Link</>}</button>
           <button onClick={copyText}>{copied === 'text' ? 'Copied!' : <><ContentCopyIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Text</>}</button></div>
