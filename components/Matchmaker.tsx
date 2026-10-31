@@ -23,7 +23,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   const [err, setErr] = useState(''); const [ok, setOk] = useState<{ msg: string; gameId: number } | null>(null); const [busy, setBusy] = useState(false);
   const filtered = useMemo(() => players.filter((p) => (showInactive || p.active || sel.includes(p.name)) && p.name.toLowerCase().includes(q.toLowerCase())), [players, q, showInactive, sel]);
   const sections = useMemo(() => {
-    const regularNames = new Set(players.slice().sort((a, b) => b.recentGames - a.recentGames).slice(0, 10).filter((p) => p.recentGames > 0).map((p) => p.name));
+    const regularNames = new Set(players.slice().sort((a, b) => b.recentGames - a.recentGames).slice(0, 12).filter((p) => p.recentGames > 0).map((p) => p.name));
     const regulars = filtered.filter((p) => regularNames.has(p.name)).sort((a, b) => b.recentGames - a.recentGames);
     const newPlayers = filtered.filter((p) => p.games === 0 && !regularNames.has(p.name));
     const others = filtered.filter((p) => p.games > 0 && !regularNames.has(p.name)).sort((a, b) => b.games - a.games);
