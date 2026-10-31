@@ -79,7 +79,10 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   }
 
   function copyLink() {
-    const url = `${window.location.origin}/matchmaking?p=${sel.join(',')}&m=${pick}`;
+    const SHIFT = 7;
+    const indices = sel.map((n) => players.findIndex((p) => p.name === n));
+    const encoded = indices.map((i) => String.fromCharCode(65 + ((i + SHIFT) % 62))).join('') + String.fromCharCode(65 + ((pick + SHIFT) % 62));
+    const url = `${window.location.origin}/matchmaking?d=${encoded}`;
     navigator.clipboard.writeText(url);
     setCopied('link'); setTimeout(() => setCopied(null), 2000);
   }
