@@ -23,6 +23,8 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   const [pick, setPick] = useState(initialPick);
   const [err, setErr] = useState(''); const [ok, setOk] = useState<{ msg: string; gameId: number } | null>(null); const [busy, setBusy] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null);
+  const [animKey, setAnimKey] = useState(0);
   const settingsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,6 +44,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   }, [players, filtered]);
   const shown = useMemo(() => [...sections.regulars, ...sections.newPlayers, ...sections.others], [sections]);
   const toggle = (n: string) => { setRes(null); setOk(null); setSel((s) => (s.includes(n) ? s.filter((x) => x !== n) : s.length < 10 ? [...s, n] : s)); };
+  const selectPick = (i: number) => { if (i === pick) return; setSlideDir(i > pick ? 'right' : 'left'); setPick(i); setAnimKey((k) => k + 1); };
 
   // Auto-generate if loaded with 10 players from URL
   useEffect(() => {
@@ -112,18 +115,20 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
         <button className="generate-btn" disabled={sel.length !== 10 || busy} onClick={() => generate()}>Generate teams</button>
       </div>
       {err && <div className="err">{err}</div>}{ok && <div className="ok">{ok.msg} <a href={`/games/${ok.gameId}/edit`}>View/Edit game</a></div>}
-      {res && o && (<>
+      {res && o && (<div className="results-enter">
         <h2 style={{ margin: '14px 0 0' }}>Best of {res.total} valid splits</h2>
-        <div className="row">{res.options.map((x, i) => <span key={i} className="option-wrap"><button className={i === pick ? 'primary' : ''} onClick={() => setPick(i)}>{i + 1}</button><span className="option-tooltip">Δ {Math.round(x.delta)}</span></span>)}
+        <div className="row">{res.options.map((x, i) => <span key={i} className="option-wrap"><button className={i === pick ? 'primary' : ''} onClick={() => selectPick(i)}>{i + 1}</button><span className="option-tooltip">Δ {Math.round(x.delta)}</span></span>)}
           <span style={{ flex: 1 }} />
           <button onClick={copyLink}>{copied === 'link' ? 'Copied!' : <><LinkIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Link</>}</button>
           <button onClick={copyText}>{copied === 'text' ? 'Copied!' : <><ContentCopyIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Text</>}</button></div>
-        <div className="side-pick-banner">Delta is <b>{Math.round(o.delta)}</b>. Team {o.a.total < o.b.total ? '1' : '2'} is lower, so <b>Team {o.a.total < o.b.total ? '1' : '2'}</b> gets to choose side.</div>
-        <div className="grid g2">{side(o.a, 'Team 1', 'team-blue')}{side(o.b, 'Team 2', 'team-red')}</div>
-        <a href="https://drafter.lol" target="_blank" rel="noopener noreferrer" className="btn draft-btn">Draft<OpenInNewIcon style={{ fontSize: 16, marginLeft: 6 }} /></a>
-        <div className="row"><button className="big blue" disabled={busy || !admin} onClick={() => record(0)}>Team 1 won</button><button className="big red" disabled={busy || !admin} onClick={() => record(1)}>Team 2 won</button></div>
-        {!admin && <div className="muted small"><a href="/admin">Log in as admin</a> to record the result.</div>}
-      </>)}
+        <div key={animKey} className={`pick-content ${slideDir === 'left' ? 'slide-left' : slideDir === 'right' ? 'slide-right' : ''}`}>
+          <div className="side-pick-banner">Delta is <b>{Math.round(o.delta)}</b>. Team {o.a.total < o.b.total ? '1' : '2'} is lower, so <b>Team {o.a.total < o.b.total ? '1' : '2'}</b> gets to choose side.</div>
+          <div className="grid g2">{side(o.a, 'Team 1', 'team-blue')}{side(o.b, 'Team 2', 'team-red')}</div>
+          <a href="https://drafter.lol" target="_blank" rel="noopener noreferrer" className="btn draft-btn">Draft<OpenInNewIcon style={{ fontSize: 16, marginLeft: 6 }} /></a>
+          <div className="row"><button className="big blue" disabled={busy || !admin} onClick={() => record(0)}>Team 1 won</button><button className="big red" disabled={busy || !admin} onClick={() => record(1)}>Team 2 won</button></div>
+          {!admin && <div className="muted small"><a href="/admin">Log in as admin</a> to record the result.</div>}
+        </div>
+      </div>)}
     </div>
   );
 }

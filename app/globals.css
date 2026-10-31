@@ -59,6 +59,13 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:-1p
 .option-tooltip { position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:8px; background:var(--panel); border:1px solid var(--line); color:var(--text); padding:6px 10px; border-radius:6px; font-size:13px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity 0.15s; }
 .option-tooltip::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:6px solid transparent; border-top-color:var(--line); }
 .option-wrap:hover .option-tooltip { opacity:1; }
+@keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideLeft { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideRight { from { opacity:0; transform:translateX(12px); } to { opacity:1; transform:translateX(0); } }
+.results-enter { animation:slideUp 0.25s ease-out; display:flex; flex-direction:column; gap:8px; }
+.pick-content { display:flex; flex-direction:column; gap:8px; }
+.pick-content.slide-left { animation:slideLeft 0.2s ease-out; }
+.pick-content.slide-right { animation:slideRight 0.2s ease-out; }
 .chips { display:flex; flex-wrap:wrap; gap:6px; } .chips-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(max(140px, calc((100% - 18px) / 4)), 1fr)); gap:6px; } .chip { padding:6px 10px; border-radius:99px; border:1px solid var(--line); background:var(--panel2); cursor:pointer; user-select:none; }
 .sections { display:flex; flex-direction:column; gap:12px; } .section { display:flex; flex-direction:column; gap:6px; } .section + .section { border-top:1px solid var(--line); padding-top:12px; } .section-label { font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
 .chip.on { background:var(--primary-dark); border-color:var(--primary); } .chip.highlight { outline:2px solid var(--primary); outline-offset:-1px; }
