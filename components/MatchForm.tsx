@@ -51,7 +51,7 @@ export default function MatchForm({ players, admin, initial }: { players: FormPl
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setMsg({ ok: false, text: j.error }); return; }
     if (initial?.id) { router.push('/games'); router.refresh(); return; }
-    setMsg({ ok: true, text: `Saved — ${w === 0 ? 'Blue' : 'Red'} won. Teams cleared for the next game.` });
+    setMsg({ ok: true, text: `Saved — Team ${w + 1} won. Teams cleared for the next game.` });
     setT0(['', '', '', '', '']); setT1(['', '', '', '', '']); setWinner(null); router.refresh();
   }
 
@@ -82,13 +82,12 @@ export default function MatchForm({ players, admin, initial }: { players: FormPl
     <div className="col">
       <div className="row"><label>Date <input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
         <input placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} style={{ flex: 1, minWidth: 180 }} /></div>
-      <div className="grid g2">{col('🔵 Blue team', 'team-blue', t0, setT0, 0)}{col('🔴 Red team', 'team-red', t1, setT1, 1)}</div>
+      <div className="grid g2">{col('Team 1', 'team-blue', t0, setT0, 0)}{col('Team 2', 'team-red', t1, setT1, 1)}</div>
       {!admin && <div className="err">You need to <a href="/admin">log in as admin</a> to save games.</div>}
       <div className="row">
-        <button className="big blue" disabled={!complete || busy || !admin} onClick={() => save(0)}>{initial?.id ? 'Save — ' : ''}Blue won</button>
-        <button className="big red" disabled={!complete || busy || !admin} onClick={() => save(1)}>{initial?.id ? 'Save — ' : ''}Red won</button>
+        <button className="big blue" disabled={!complete || busy || !admin} onClick={() => save(0)}>{initial?.id ? 'Save — ' : ''}Team 1 won</button>
+        <button className="big red" disabled={!complete || busy || !admin} onClick={() => save(1)}>{initial?.id ? 'Save — ' : ''}Team 2 won</button>
       </div>
-      {!complete && <div className="muted small">Fill all 10 slots (role is set by the slot). Clicking the winner saves the game immediately.</div>}
       {msg && <div className={msg.ok ? 'ok' : 'err'}>{msg.text}</div>}
     </div>
   );
