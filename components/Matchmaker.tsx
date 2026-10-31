@@ -1,10 +1,11 @@
 'use client';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROLE_EMOJI, type Role } from '@/lib/types';
 import LinkIcon from '@mui/icons-material/Link';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 interface P { name: string; mmr: number; active: boolean; games: number; recentGames: number }
 interface Side { players: { name: string; mmr: number; role: Role }[]; total: number; synergy: number | null; against: number | null; estimate: number | null }
@@ -21,6 +22,16 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   const [res, setRes] = useState<{ total: number; options: Option[] } | null>(null);
   const [pick, setPick] = useState(initialPick);
   const [err, setErr] = useState(''); const [ok, setOk] = useState<{ msg: string; gameId: number } | null>(null); const [busy, setBusy] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false);
+    };
+    if (settingsOpen) document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [settingsOpen]);
   const filtered = useMemo(() => players.filter((p) => (showInactive || p.active || sel.includes(p.name)) && p.name.toLowerCase().includes(q.toLowerCase())), [players, q, showInactive, sel]);
   const sections = useMemo(() => {
     const regularNames = new Set(players.slice().sort((a, b) => b.recentGames - a.recentGames).slice(0, 12).filter((p) => p.recentGames > 0).map((p) => p.name));
@@ -81,7 +92,12 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   return (
     <div className="col">
       <div className="row"><span className="input-hint"><input placeholder="Search players…" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { if (sel.length === 10 && !busy) { generate(); } else if (q && shown.length > 0) { toggle(shown[0].name); setQ(''); } } }} /><kbd>⏎</kbd></span>
-        <label className="small muted"><input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> show inactive</label>
+        <div ref={settingsRef} style={{ position: 'relative' }}>
+          <button onClick={() => setSettingsOpen(!settingsOpen)} style={{ padding: '6px 10px', display: 'flex', alignItems: 'center' }}><SettingsIcon style={{ fontSize: 18 }} /></button>
+          {settingsOpen && <div className="settings-popup">
+            <div className="settings-row"><span>Show inactive</span><button className={`toggle ${showInactive ? 'on' : ''}`} onClick={() => setShowInactive(!showInactive)}><span className="toggle-knob" /></button></div>
+          </div>}
+        </div>
         <span style={{ flex: 1 }} /><b>{sel.length}/10</b><button onClick={() => { setSel([]); setRes(null); }}>Clear</button>
         <button className="primary" disabled={sel.length !== 10 || busy} onClick={() => generate()}>Generate teams</button></div>
       {q ? (
