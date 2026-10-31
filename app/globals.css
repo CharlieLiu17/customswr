@@ -55,6 +55,10 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:-1p
 .toggle-knob { position:absolute; top:2px; left:2px; width:18px; height:18px; background:#fff; border-radius:50%; transition:transform 0.2s; }
 .toggle.on .toggle-knob { transform:translateX(20px); }
 .generate-btn { background:var(--primary); border-color:var(--primary); color:#000; padding:16px 48px; font-size:17px; font-weight:700; border-radius:10px; cursor:pointer; } .generate-btn:hover:not(:disabled) { opacity:0.9; } .generate-btn:disabled { opacity:0.45; cursor:not-allowed; }
+.option-wrap { position:relative; display:inline-block; }
+.option-tooltip { position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:8px; background:var(--panel); border:1px solid var(--line); color:var(--text); padding:6px 10px; border-radius:6px; font-size:13px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity 0.15s; }
+.option-tooltip::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:6px solid transparent; border-top-color:var(--line); }
+.option-wrap:hover .option-tooltip { opacity:1; }
 .chips { display:flex; flex-wrap:wrap; gap:6px; } .chips-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(max(140px, calc((100% - 18px) / 4)), 1fr)); gap:6px; } .chip { padding:6px 10px; border-radius:99px; border:1px solid var(--line); background:var(--panel2); cursor:pointer; user-select:none; }
 .sections { display:flex; flex-direction:column; gap:12px; } .section { display:flex; flex-direction:column; gap:6px; } .section + .section { border-top:1px solid var(--line); padding-top:12px; } .section-label { font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
 .chip.on { background:var(--primary-dark); border-color:var(--primary); } .chip.highlight { outline:2px solid var(--primary); outline-offset:-1px; }

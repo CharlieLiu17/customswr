@@ -114,7 +114,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
       {err && <div className="err">{err}</div>}{ok && <div className="ok">{ok.msg} <a href={`/games/${ok.gameId}/edit`}>View/Edit game</a></div>}
       {res && o && (<>
         <h2 style={{ margin: '14px 0 0' }}>Best of {res.total} valid splits</h2>
-        <div className="row">{res.options.map((x, i) => <button key={i} className={i === pick ? 'primary' : ''} onClick={() => setPick(i)}>{i + 1}</button>)}
+        <div className="row">{res.options.map((x, i) => <span key={i} className="option-wrap"><button className={i === pick ? 'primary' : ''} onClick={() => setPick(i)}>{i + 1}</button><span className="option-tooltip">Δ {Math.round(x.delta)}</span></span>)}
           <span style={{ flex: 1 }} />
           <button onClick={copyLink}>{copied === 'link' ? 'Copied!' : <><LinkIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Link</>}</button>
           <button onClick={copyText}>{copied === 'text' ? 'Copied!' : <><ContentCopyIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Text</>}</button></div>
