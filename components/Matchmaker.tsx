@@ -150,7 +150,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
         </div>
       )}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-        <button className="generate-btn" disabled={sel.length !== 10 || busy} onClick={() => generate()}>Generate teams</button>
+        <button className="generate-btn" disabled={sel.length !== 10 || busy} onClick={() => generate()}>Generate Teams</button>
       </div>
       {err && <div className="err">{err}</div>}{ok && <div className="ok">{ok.msg} <a href={`/games/${ok.gameId}/edit`}>View/Edit game</a></div>}
       {res && o && (<div className="results-enter">
