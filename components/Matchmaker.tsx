@@ -139,7 +139,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
             <div className="settings-row"><span>Show inactive</span><button className={`toggle ${showInactive ? 'on' : ''}`} onClick={() => setShowInactive(!showInactive)}><span className="toggle-knob" /></button></div>
           </div>}
         </div>
-        <span style={{ flex: 1 }} /><span style={{ fontSize: 20 }}><b style={{ color: sel.length === 10 ? 'var(--text)' : 'var(--muted)' }}>{sel.length}</b> / 10</span><span style={{ flex: 1 }} /><button onClick={() => { setSel([]); setRes(null); }}>Clear</button></div>
+        <span style={{ flex: 1 }} /><span style={{ fontSize: 20 }}><b style={{ color: sel.length === 10 ? 'var(--text)' : 'var(--muted)' }}>{sel.length}</b> / 10</span><span style={{ flex: 1 }} /><button className="clear-btn" onClick={() => { setSel([]); setRes(null); }}>Clear</button></div>
       {q ? (
         <div className="chips">{shown.map((p, i) => <span key={p.name} className={`chip ${sel.includes(p.name) ? 'on' : ''} ${i === 0 ? 'highlight' : ''}`} onClick={() => toggle(p.name)}>{p.name}<small className={eloTier(p.mmr)}>{Math.round(p.mmr)}</small></span>)}</div>
       ) : (
