@@ -136,10 +136,10 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
         <div key={animKey} className={`pick-content ${slideDir === 'left' ? 'slide-left' : slideDir === 'right' ? 'slide-right' : ''}`}>
           <div className="side-pick-banner">Delta is <b>{Math.round(o.delta)}</b>. Team {o.a.total < o.b.total ? '1' : '2'} is lower, so <b>Team {o.a.total < o.b.total ? '1' : '2'}</b> gets to choose side.</div>
           <div className="grid g2">{side(o.a, 'Team 1', 'team-blue')}{side(o.b, 'Team 2', 'team-red')}</div>
-          <a href="https://drafter.lol" target="_blank" rel="noopener noreferrer" className="btn draft-btn">Draft<OpenInNewIcon style={{ fontSize: 16, marginLeft: 6 }} /></a>
-          <div className="row"><button className="big blue" disabled={busy || !admin} onClick={() => record(0)}>Team 1 won</button><button className="big red" disabled={busy || !admin} onClick={() => record(1)}>Team 2 won</button></div>
-          {!admin && <div className="muted small"><a href="/admin">Log in as admin</a> to record the result.</div>}
         </div>
+        <a href="https://drafter.lol" target="_blank" rel="noopener noreferrer" className="btn draft-btn">Draft<OpenInNewIcon style={{ fontSize: 16, marginLeft: 6 }} /></a>
+        <div className="row"><button className="big blue" disabled={busy || !admin} onClick={() => record(0)}>Team 1 won</button><button className="big red" disabled={busy || !admin} onClick={() => record(1)}>Team 2 won</button></div>
+        {!admin && <div className="muted small"><a href="/admin">Log in as admin</a> to record the result.</div>}
       </div>)}
     </div>
   );
