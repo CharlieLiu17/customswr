@@ -77,7 +77,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     const r = await fetch('/api/matches', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setErr(j.error); return; }
-    setOk({ msg: `Saved — Team ${winner + 1} won. MMRs updated.`, gameId: j.id }); setRes(null); setSel([]); router.refresh();
+    setOk({ msg: `Saved — Team ${winner + 1} won. MMRs updated.`, gameId: j.id }); setRes(null); router.refresh();
   }
 
   function copyLink() {
@@ -133,6 +133,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   const o = res?.options[pick];
   return (
     <div className="col">
+      {ok && <div className="success-banner">{ok.msg} <a href={`/games/${ok.gameId}/edit`}>Go to Game</a></div>}
       <div className="row"><span className="input-hint"><input placeholder="Search players…" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { if (sel.length === 10 && !busy) { generate(); } else if (q && shown.length > 0) { toggle(shown[0].name); setQ(''); } } }} /><kbd>⏎</kbd></span>
         <div ref={settingsRef} style={{ position: 'relative' }}>
           <button onClick={() => setSettingsOpen(!settingsOpen)} style={{ padding: '6px 10px', display: 'flex', alignItems: 'center' }}><SettingsIcon style={{ fontSize: 18 }} /></button>
@@ -153,7 +154,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
         <button className="generate-btn" disabled={sel.length !== 10 || busy} onClick={() => generate()}>Generate Teams</button>
       </div>
-      {err && <div className="err">{err}</div>}{ok && <div className="ok">{ok.msg} <a href={`/games/${ok.gameId}/edit`}>View/Edit game</a></div>}
+      {err && <div className="err">{err}</div>}
       {res && o && (<div className="results-enter">
         <h2 style={{ margin: '14px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>Best of {res.total} valid splits <span className="info-hint"><InfoOutlinedIcon style={{ fontSize: 16, color: 'var(--muted)' }} /><span className="info-tooltip" style={{ width: 260, whiteSpace: 'normal' }}>Of 126 ways to split 10 players, only {res.total} passed: each team can fill all 5 roles, no two same-role one-tricks together, and estimated win rates under 56%.</span></span></h2>
         <div className="row">{res.options.map((x, i) => <span key={i} className="option-wrap"><button className={i === pick ? 'primary' : ''} onClick={() => selectPick(i)}>{i + 1}</button><span className="option-tooltip">Δ {Math.round(x.delta)}</span></span>)}

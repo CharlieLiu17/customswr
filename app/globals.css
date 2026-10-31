@@ -47,6 +47,7 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:-1p
 .slot { display:grid; grid-template-columns:34px 1fr auto; gap:8px; align-items:center; margin:6px 0; } .slot select { width:100%; }
 .grab { padding:4px 8px; font-size:14px; background:var(--panel2); border:1px solid var(--line); border-radius:6px; cursor:pointer; } .grab:hover { border-color:var(--muted); } .grab.on { background:var(--primary); border-color:var(--primary); color:#000; }
 .err { color:var(--red); margin:8px 0; } .ok { color:var(--green); margin:8px 0; }
+.success-banner { background:var(--primary-dark); border:1px solid var(--primary); color:var(--text); padding:12px 16px; border-radius:8px; margin-bottom:12px; } .success-banner a { color:var(--blue); }
 .side-pick-banner { background:#2a9d6a; color:#fff; text-align:center; padding:6px 12px; border-radius:6px; font-size:14px; }
 .draft-btn { background:#c8a774; color:#000; border-color:#c8a774; display:flex; align-items:center; justify-content:center; width:100%; }
 .settings-popup { position:absolute; left:0; top:100%; margin-top:4px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; z-index:20; min-width:180px; }
