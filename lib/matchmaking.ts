@@ -70,7 +70,7 @@ export function findSplits(players: MMPlayer[]): Split[] {
     const ra = assignRoles(a); if (!ra) continue;
     const rb = assignRoles(b); if (!rb) continue;
     const pa = plan(a, ra), pb = plan(b, rb);
-    out.push({ a: pa, b: pb, delta: Math.abs(pa.total - pb.total) });
+    out.push({ a: pa, b: pb, delta: Math.abs(pa.total - pb.total) / 5 });
   }
   return out.sort((x, y) => x.delta - y.delta);
 }
