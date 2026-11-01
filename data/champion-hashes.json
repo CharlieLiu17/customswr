@@ -1,0 +1,678 @@
+{
+  "aatrox": {
+    "name": "aatrox",
+    "hash": "1bf013f811f800f800f8007e003c8078c01ce00d4cc309c714df1ef73f377ff7"
+  },
+  "ahri": {
+    "name": "ahri",
+    "hash": "80000080027003b8218022e00ff00ff107f10ff00ff80fe00ee0a7e0c3e0c0c0"
+  },
+  "akali": {
+    "name": "akali",
+    "hash": "c0000620c78007c087c00fe08f308fd88ff80ff807f083c08000c020e982e782"
+  },
+  "akshan": {
+    "name": "akshan",
+    "hash": "00ff007f007f061f070f3f1f7f1c7e3c037013000f800fc407c0010000600012"
+  },
+  "alistar": {
+    "name": "alistar",
+    "hash": "066000f000f000f800e001c3008700010780af80c781e000f10cf00df01bf03f"
+  },
+  "ambessa": {
+    "name": "ambessa",
+    "hash": "fffffffffffffff3f81bd8038cf007300080008000000000000000200000c000"
+  },
+  "amumu": {
+    "name": "amumu",
+    "hash": "3fc07fe0ffc0f3c0c0e0210073c073e079e07ec0c700ffc0ffe0ff00f6000008"
+  },
+  "anivia": {
+    "name": "anivia",
+    "hash": "1ffc1ff91ff33ff03f843ff83f307ce07ff0ffe0ffe0c3e883e001c001800080"
+  },
+  "annie": {
+    "name": "annie",
+    "hash": "dff0840080008000e0004c0077807b007fb07fe0fff8fff89ff80ff00f800700"
+  },
+  "aphelios": {
+    "name": "aphelios",
+    "hash": "000004000e00030000c0106013f01ffe1ffe1ffe1ffc0fd90ff9079103010181"
+  },
+  "ashe": {
+    "name": "ashe",
+    "hash": "9807b04763feefffc83f407f00ff0fff0fff0ffe07fe07fe01dc003c001c0018"
+  },
+  "aurelionsol": {
+    "name": "aurelionsol",
+    "hash": "0004004c18cf07ce07fb04fb0e5f0e1f0f4207fe33fe027e007e003e00240004"
+  },
+  "aurora": {
+    "name": "aurora",
+    "hash": "8800c800c8008800cd00cf00d500bf20fe887fc83fe03fe03ff01be01fc3ff07"
+  },
+  "azir": {
+    "name": "azir",
+    "hash": "fffdffd8ffc0ffc0ff70fe30ff70ff40ffe8f820f020c020c0204020c030c063"
+  },
+  "bard": {
+    "name": "bard",
+    "hash": "001f600fdfffbfff1ffe0ffc0ffc03f800f800f000f000e180478039c00fe03f"
+  },
+  "belveth": {
+    "name": "belveth",
+    "hash": "e00fb003b003880308010de50df10ff9cff1cffbeff3e3e2e702e000b000b000"
+  },
+  "blitzcrank": {
+    "name": "blitzcrank",
+    "hash": "003e001f030f8f839f819fe097f08bf85df00dfc03dc03dc07e807f807f000e0"
+  },
+  "brand": {
+    "name": "brand",
+    "hash": "ff03c4818221cf70ff70de9098001805986718f309f305fe01fc000cc04f100f"
+  },
+  "braum": {
+    "name": "braum",
+    "hash": "fffffe0fe707cf1fcf3fd806e000c000800001010fffeffff000f000e000f000"
+  },
+  "briar": {
+    "name": "briar",
+    "hash": "00030007000301c311c131cd311d7775f7f7f7ff37e71fc797cf0fde0ffe1ffc"
+  },
+  "caitlyn": {
+    "name": "caitlyn",
+    "hash": "00000000000000000000000000be01fee7fee7fee7fce7fee3fea1fac0fe000e"
+  },
+  "camille": {
+    "name": "camille",
+    "hash": "0fe01fc01fff1fff1ffe0ff807e00040004f085f1c0f1f809f809f80dc00d800"
+  },
+  "cassiopeia": {
+    "name": "cassiopeia",
+    "hash": "00028002c3000330043e041e0288010b01ff01ff01ff01ff01ff00ff30ff78ff"
+  },
+  "chogath": {
+    "name": "chogath",
+    "hash": "af802f000c0001301838dc38fe80f900fc00f840f000f000f22cf268f33ff67f"
+  },
+  "corki": {
+    "name": "corki",
+    "hash": "7e01fa01f201e000e000e000e002fc06e80f3e0e3f00ae30807bff60ff00fe38"
+  },
+  "darius": {
+    "name": "darius",
+    "hash": "e5c0f3c0e7e06f80673076084c186e787e783cfe1c7e1c3e1e100c000e500700"
+  },
+  "diana": {
+    "name": "diana",
+    "hash": "fff1fff3ff82ff84ff84ff80ff80bf009e40c404c424e3e0c2c08bd084300260"
+  },
+  "draven": {
+    "name": "draven",
+    "hash": "7f807cc47f847f823f0a0c482fb87ff87f400f000680060007c007e007c00300"
+  },
+  "drmundo": {
+    "name": "drmundo",
+    "hash": "c6008f001b8019e09fc09fa09fb0d7f8fa703a201c003e00ba00bc009f00c700"
+  },
+  "ekko": {
+    "name": "ekko",
+    "hash": "a7f1a3e390030301c7017f217f333c331e030c070e0700060006060f00180008"
+  },
+  "elise": {
+    "name": "elise",
+    "hash": "020000400fc017f01fe00fc0038805f81ff007f007f003a0016080c08000c000"
+  },
+  "evelynn": {
+    "name": "evelynn",
+    "hash": "fff0fff0bfe09fe08fc08380909898c0c200ee00ff40ff00cd0cc21800000000"
+  },
+  "ezreal": {
+    "name": "ezreal",
+    "hash": "9a4763f7c1ff03ff07ff03ff00ff001f0002005603fe03fc03fc03fc00f800f0"
+  },
+  "fiddlesticks": {
+    "name": "fiddlesticks",
+    "hash": "000f8007c013c033c07bc03b003f007f607f607fc87ec07ee57ee7bee7fef7fe"
+  },
+  "fiora": {
+    "name": "fiora",
+    "hash": "06070f030f811c80104000c01fc01ff00ff80ff807f003d083ff01ffe0ff38ff"
+  },
+  "fizz": {
+    "name": "fizz",
+    "hash": "fffafff1bbe63bef3bc933d073c853c053db03fc2c0070f0c000c00080008300"
+  },
+  "galio": {
+    "name": "galio",
+    "hash": "270067006640e4406440204006c0cf80cf88cf80cf90fff0fff0fff0cfe0c7e0"
+  },
+  "gangplank": {
+    "name": "gangplank",
+    "hash": "0c030003000700070003000301037f037f033f075c0f7e07f803f003f101e001"
+  },
+  "garen": {
+    "name": "garen",
+    "hash": "000000004230467867f267c63f0e3ffc3ffc3ffc3ffc33fc18381ff01fe10fc7"
+  },
+  "gnar": {
+    "name": "gnar",
+    "hash": "0000000000000000009803b807f903f33fe3ffe37fe603fd61fdfbfcffc4fbc1"
+  },
+  "gragas": {
+    "name": "gragas",
+    "hash": "fff87ff8ffe1ffc0ffbc5e7c44780f803e18400480000300000001c007c00700"
+  },
+  "graves": {
+    "name": "graves",
+    "hash": "20006000607243f867f07f387e38fc7cc4f8cff8ff10fc00f000f1c0f1800000"
+  },
+  "gwen": {
+    "name": "gwen",
+    "hash": "7f80ffc07fc07fe01f001c003cc0300130803fc03fc01ff01fa086803818fc38"
+  },
+  "hecarim": {
+    "name": "hecarim",
+    "hash": "01c070e0e03fc00ec00080808001007f03ffffffff83ff87800fc03f00ff0fff"
+  },
+  "heimerdinger": {
+    "name": "heimerdinger",
+    "hash": "7d00ff807780ff40ffe81f800f0007000000367037300400fe00fff8fff81df8"
+  },
+  "hwei": {
+    "name": "hwei",
+    "hash": "00000060407041f081d087008f10df70dfe0ffe0fff0ffc0ffc0cf83c7038301"
+  },
+  "illaoi": {
+    "name": "illaoi",
+    "hash": "ffe3f8fbd07fc03f833d8431e7b1011d038b0018001800100000018000800000"
+  },
+  "irelia": {
+    "name": "irelia",
+    "hash": "c0028300838187e1218067e0e3c0dfe0fff8ff78bff09e30dfa0dfe00fc00780"
+  },
+  "ivern": {
+    "name": "ivern",
+    "hash": "1c70a07a0079047c00380038001f33be3ffc03bc07cc03f902f001f00021000b"
+  },
+  "janna": {
+    "name": "janna",
+    "hash": "fe00ffe0ffc0ff18fe18f01cc01c8f9c3ffc33dc7fcc3b8619801f000e000c00"
+  },
+  "jarvaniv": {
+    "name": "jarvaniv",
+    "hash": "e0e0e0ecf07cb0f0d0600800000018629bf08ff8cff067c06f81a71ea13ca700"
+  },
+  "jax": {
+    "name": "jax",
+    "hash": "07ff07ff0fff0fff0fff0fff0f9b0f83008200c200180044012000a000200000"
+  },
+  "jayce": {
+    "name": "jayce",
+    "hash": "100310010181ff80ff00fe207cf00df07ff07ff07fe07ce03c000c4003c006c0"
+  },
+  "jhin": {
+    "name": "jhin",
+    "hash": "0000000c040d07f807f007b023e633fe3ffc1ff807f803f803d001e000600100"
+  },
+  "jinx": {
+    "name": "jinx",
+    "hash": "e3e0e3e0cfc0df80cf008f00833883f88fa0ff807fc03c007fe03fe03ff013e0"
+  },
+  "kaisa": {
+    "name": "kaisa",
+    "hash": "800000c003c00fa00700038003fc0bfe03fe1ffe1ffe1ffe0c3e0ffc07fc07fc"
+  },
+  "kalista": {
+    "name": "kalista",
+    "hash": "1102020200000000038167c07fe97fe27fe23fc13fe32b802f84010803001f00"
+  },
+  "karma": {
+    "name": "karma",
+    "hash": "0fc00f840784030602069003e303f303db03df02de449f00be00ff00f1c0ff07"
+  },
+  "karthus": {
+    "name": "karthus",
+    "hash": "fbc1fbdc7fbe7fefbe811c0000000000020003c003c043e063e0e3c1f18130c2"
+  },
+  "kassadin": {
+    "name": "kassadin",
+    "hash": "008081e0c1e0e1c179803dbfffb8ff30ff01de431f338e1b060d060c06060601"
+  },
+  "katarina": {
+    "name": "katarina",
+    "hash": "0d18081c003c00380070006400cb008300ff00ff02ff72ffc07f803e000e001c"
+  },
+  "kayle": {
+    "name": "kayle",
+    "hash": "ffffffcfff0fef1fe31fe19fe023e007e007e007e026e00cf048b05098208c00"
+  },
+  "kayn": {
+    "name": "kayn",
+    "hash": "0003386173e067f00ff00fe007d00081004100c100e140018443820f81af4097"
+  },
+  "kennen": {
+    "name": "kennen",
+    "hash": "01f001f803f407fe07ff07ff0fff07ff47ff43ff003f007c0fe00fc000000000"
+  },
+  "khazix": {
+    "name": "khazix",
+    "hash": "004000400008003800700ef00ef00fd00f010e030007e81fe87fec7fe3ffe1ff"
+  },
+  "kindred": {
+    "name": "kindred",
+    "hash": "07fc01ff01fd07fc067c07fc07fc03fc01f419f819f809f000f840e000800000"
+  },
+  "kled": {
+    "name": "kled",
+    "hash": "c0016001600100011f811fc10e78003c387d181f0c0f098f0c8f0edf0ff709ff"
+  },
+  "kogmaw": {
+    "name": "kogmaw",
+    "hash": "401008200a780ffe1ffe1ff81ff0dfe4dfc0df805f8000180070600020003d60"
+  },
+  "ksante": {
+    "name": "ksante",
+    "hash": "000103814f00dc00f90091408ac08180ff81f7c3fc00f800ef00fd00f200e000"
+  },
+  "leblanc": {
+    "name": "leblanc",
+    "hash": "80fc803805fe05fe007c001802ff03ff03f701ff01ff80ea107e043c031c0000"
+  },
+  "leesin": {
+    "name": "leesin",
+    "hash": "e00fe006c002800380038007c003c003c20fc01fe03fe83ff01ff01ff01ff803"
+  },
+  "leona": {
+    "name": "leona",
+    "hash": "9b2015809f801fc01f800e0006009ff09ff37fff3ffc9ff8d9f0ffe0ffc0e600"
+  },
+  "lillia": {
+    "name": "lillia",
+    "hash": "0000000000000760f870f07019f01ff03ff03ff83ffe1ffe0fbe0ff407e803cc"
+  },
+  "lissandra": {
+    "name": "lissandra",
+    "hash": "ff00ff00e6008400800803443fc43f823f803f801f800f000c690ce907eb40ff"
+  },
+  "lucian": {
+    "name": "lucian",
+    "hash": "03f803f803f803f803580318038103f101fd01b2819683ccc01cc29e601f713f"
+  },
+  "lulu": {
+    "name": "lulu",
+    "hash": "c000e00080008000000008bc0ff80ffc3ffc3ffc7fbc783878387cf07fe01fc0"
+  },
+  "lux": {
+    "name": "lux",
+    "hash": "fc00fe00ff00ff0cfe08fe08fe3cfffcfffcc3fca7fa47ea27c81ffd07c3003e"
+  },
+  "malphite": {
+    "name": "malphite",
+    "hash": "04000001000100010003000b04030407101f081f032f83e7f10ff81ff81ffe1f"
+  },
+  "malzahar": {
+    "name": "malzahar",
+    "hash": "838306c307e307e103d107f007f007f807f807f003e00c000f10006000100060"
+  },
+  "maokai": {
+    "name": "maokai",
+    "hash": "c440c260c00081000010007800608060c060f840f860f3b0fc60ffa0fb80f800"
+  },
+  "masteryi": {
+    "name": "masteryi",
+    "hash": "fe00f8c0fba0c781df98fe30fcf0f0f0ff20ff80ff00fe00fc00f000f001e001"
+  },
+  "milio": {
+    "name": "milio",
+    "hash": "000000600021007101890306034f07ff03ff63ff6fff7fff3cff19dc8038e3f0"
+  },
+  "missfortune": {
+    "name": "missfortune",
+    "hash": "3000c000000000ac000413c43ff81ff07fe03ff07ff07ff07fe0ff00ff807fc0"
+  },
+  "monkeyking": {
+    "name": "monkeyking",
+    "hash": "e000e004e00ce002e000e000e3fcc7fc04581ef81ff807f007c80f8107030007"
+  },
+  "mordekaiser": {
+    "name": "mordekaiser",
+    "hash": "c01d003f007f00ff00ff00ffc077e077807fc00dc001c003c00fc00d00010000"
+  },
+  "morgana": {
+    "name": "morgana",
+    "hash": "04003c007800f980f100fe800ff00ff82ff81ffe1bfe1ffe1c3c0c7c06f803f0"
+  },
+  "naafiri": {
+    "name": "naafiri",
+    "hash": "fffcffe0ff80ff0cff18fcc07e002000000088009800e000c01fe1fff7ffffff"
+  },
+  "nami": {
+    "name": "nami",
+    "hash": "7f207e207c201c400c000400038009f81ff83ff09ff807f805f803f001e00000"
+  },
+  "nasus": {
+    "name": "nasus",
+    "hash": "fb6cf8d8f9f1ffe1e580f300f670fc00f80020004060d0c7da7dfd7ce200fc00"
+  },
+  "nautilus": {
+    "name": "nautilus",
+    "hash": "c007c0078007803381798070813c07fe17cf070f0e0f0e071f8f1f831e011e00"
+  },
+  "neeko": {
+    "name": "neeko",
+    "hash": "c000f000e3c08f809fb00ff40ffc3ffc1ff83ffc1ffc1c7c0e7807f801f00000"
+  },
+  "nidalee": {
+    "name": "nidalee",
+    "hash": "3f013f013f001f001f801fc0938009809fe4dff85fd8cf118601820100011003"
+  },
+  "nilah": {
+    "name": "nilah",
+    "hash": "400040000000000000000003000b003f057fb3ffff7fff7fffbfff0ffd9eff36"
+  },
+  "nocturne": {
+    "name": "nocturne",
+    "hash": "a014c0048000c000c000e001f006f03cf87ff17cf039f07f903ff87ff87ff8ff"
+  },
+  "nunu": {
+    "name": "nunu",
+    "hash": "80070003000100000000000200fe07c407cc1ffe1ffe3fff3fff1fff0fffe3ff"
+  },
+  "olaf": {
+    "name": "olaf",
+    "hash": "3f403b001f401f000c000e101b101f101f801ff017f086b0c400c1f0e7f9f7f9"
+  },
+  "orianna": {
+    "name": "orianna",
+    "hash": "0018039007c00fc82ff82fd01fe03ff03fc43f443fc03fc0bf803f803f001c00"
+  },
+  "ornn": {
+    "name": "ornn",
+    "hash": "fffffffc07e00000181809800fd83c3f701fc0010000000003801ba03bd83ee8"
+  },
+  "pantheon": {
+    "name": "pantheon",
+    "hash": "fffefffcfffcfffcf3f9f1f341f3c010800000000000c000c00080100008600c"
+  },
+  "poppy": {
+    "name": "poppy",
+    "hash": "047f001f001b000900e002ec02f806f87ff17ffb3fce3fff1fff07e701ff0007"
+  },
+  "pyke": {
+    "name": "pyke",
+    "hash": "fff7fff3e7e2e3c060c163c233c071806a008f8084300000008000c08060c041"
+  },
+  "qiyana": {
+    "name": "qiyana",
+    "hash": "0347000739bd1fd30ff90ffc040e0407be47ff03b3e717cf039d801f801f8006"
+  },
+  "quinn": {
+    "name": "quinn",
+    "hash": "e000e000e000d000c100e101e801e606e838fffcdffcdff5cff4cf84478441c0"
+  },
+  "rakan": {
+    "name": "rakan",
+    "hash": "ffe0fef07f7c7f1f5f196e100f7007f107e107eb018a8400c400460047000000"
+  },
+  "rammus": {
+    "name": "rammus",
+    "hash": "ffc0ffc0ffe0ffb89fc000e010003000180000005e00e318f808fe00ff00ff80"
+  },
+  "reksai": {
+    "name": "reksai",
+    "hash": "e600f600f600fa00fe00fc00780079002880a800b4a08aa00fa016603878383d"
+  },
+  "rell": {
+    "name": "rell",
+    "hash": "81f9e378c7dc86048e00cf00838af98cfccbfecdfe03fe03ff07f7079107000f"
+  },
+  "renata": {
+    "name": "renata",
+    "hash": "e7010f011e0073c06630c66207f10fe313c901c100e90ab801b803b803f80ffc"
+  },
+  "renekton": {
+    "name": "renekton",
+    "hash": "00000800001804123f067fa81f801f823980f807f807fe0eff1efffcfff8fff8"
+  },
+  "rengar": {
+    "name": "rengar",
+    "hash": "000b001b3e1b7f190fff09ff07fe07fc073c03dc00e400c0000204030227003c"
+  },
+  "riven": {
+    "name": "riven",
+    "hash": "ffc0ff82fe26fc4ff180e200ff10bfc07ffebff83f781ee01cc01c007c00ff20"
+  },
+  "rumble": {
+    "name": "rumble",
+    "hash": "700f300f30011040d000d000c000e036e040e000f850ec78ef807ffc7ffc3ff8"
+  },
+  "ryze": {
+    "name": "ryze",
+    "hash": "fffff3ffc07fc19f81ff01ef00cf000700070007000f0007000f000fc0078007"
+  },
+  "samira": {
+    "name": "samira",
+    "hash": "80007c00f900fb00fe00c300c100c1f043f863f8ffb0ff60ff80fe00ff90fff0"
+  },
+  "sejuani": {
+    "name": "sejuani",
+    "hash": "801a0002020003000100020086088f9c8f880fc30fe30fef0ffb0fe303c303c7"
+  },
+  "senna": {
+    "name": "senna",
+    "hash": "008f03c707e107800b3c003f007f20ff70fe00ff07fd01f903f303e201c00381"
+  },
+  "seraphine": {
+    "name": "seraphine",
+    "hash": "45e10f930f3b4fdf4f871f8787df07ff07ff0fff1eff1e1e0c1d067d033801f8"
+  },
+  "sett": {
+    "name": "sett",
+    "hash": "7000e000c118018823f807f82f785df45ffc3e1c3cfc3d7e3ff81ff81fe00f00"
+  },
+  "shaco": {
+    "name": "shaco",
+    "hash": "000480168066a0c7999fcf7fdfffcfeecfcf0307030f010dc0cc03c093c859c0"
+  },
+  "shen": {
+    "name": "shen",
+    "hash": "fc00f180e600fd00ff80e700ec80c1c080009e009f009f809fc0dfc0dec0ec00"
+  },
+  "shyvana": {
+    "name": "shyvana",
+    "hash": "1ff81de018e000410000000008800c981e380ff88ff10ff10fe107e041c0c184"
+  },
+  "singed": {
+    "name": "singed",
+    "hash": "09ff0bff0bff0fff05ff05fc07f80e71080800e00fe00f600fe00f200e000600"
+  },
+  "sion": {
+    "name": "sion",
+    "hash": "1838319c23ffe7ffc7ffc07ff067c82fe183c103e00060000800000080008000"
+  },
+  "sivir": {
+    "name": "sivir",
+    "hash": "dfc08f001f7017c0038007803ff03f7c3e783e781ff018601f200c400fc00780"
+  },
+  "skarner": {
+    "name": "skarner",
+    "hash": "7f08ff8cff907fb03ff00ff007e062c0078001010001000300018280c608ce0c"
+  },
+  "smolder": {
+    "name": "smolder",
+    "hash": "8020010003f013f8371c041e0dfe0dfe0efe0fde5fbcfe3cf838607031c00182"
+  },
+  "sona": {
+    "name": "sona",
+    "hash": "0000000000004000218001f08ff01ff039f0bff0fe32bc3eff7fffffffefffef"
+  },
+  "soraka": {
+    "name": "soraka",
+    "hash": "fbffff3fff1fbf0fbe27fe608f7087f0b7f09ff0de70ce80c600e00040000000"
+  },
+  "swain": {
+    "name": "swain",
+    "hash": "03fa07fe0fbf0f1f041f0c1d0ffc0ffc0ff803fd03ff07ff03ff07f803f80ff0"
+  },
+  "sylas": {
+    "name": "sylas",
+    "hash": "00000000017003fc07fc03fa107c176e1ffe1ffe0ffc07fc07fc07f883fee1fe"
+  },
+  "syndra": {
+    "name": "syndra",
+    "hash": "60006000a000000b005b043f07fc17fc17f81ffc3e7c1e7c7ef9fff37fe11b87"
+  },
+  "tahmkench": {
+    "name": "tahmkench",
+    "hash": "810100004000e00044000ce68fecefff6ff807ff03fc0000038227fc0ffc03e0"
+  },
+  "taliyah": {
+    "name": "taliyah",
+    "hash": "f600e610dc38dc3c983c0d380ff00ff007fe9ffe9ffc9ffc1bf81e380e7007c0"
+  },
+  "talon": {
+    "name": "talon",
+    "hash": "7fbf7ffffffcbff23fc11f001c0008000000008001e081f8c1f8e0fce0f8e078"
+  },
+  "taric": {
+    "name": "taric",
+    "hash": "01e003f007f8018000802fe03ffc7fb87e38fff8fe38fdc0fe40ffe07fe07c00"
+  },
+  "teemo": {
+    "name": "teemo",
+    "hash": "9000c000000002010707079f03ff02ff02ff07ff1fff1ffd37ff6f001f003c06"
+  },
+  "thresh": {
+    "name": "thresh",
+    "hash": "e79f671ee31f201f201f801fc01fc00fe00fe09fe03f703e7c7c7df81fe80f88"
+  },
+  "tristana": {
+    "name": "tristana",
+    "hash": "27fd4ffc9ff88fc00790070e061e0c3e01f681f681e7c246c004c00ce008a000"
+  },
+  "trundle": {
+    "name": "trundle",
+    "hash": "06000c0018838f868784e000c900a000d800f800f804f800fc00fa00f800f009"
+  },
+  "tryndamere": {
+    "name": "tryndamere",
+    "hash": "3fc03fc01fe03fe03fe01fe01fe00f8008f827e81fc819c41c000ce005e007c0"
+  },
+  "twistedfate": {
+    "name": "twistedfate",
+    "hash": "ff00fe10f600f700f300be003f003e081c6898e0b9e0bde0f9e0ffc03bcb3193"
+  },
+  "twitch": {
+    "name": "twitch",
+    "hash": "01ff03ff036f01df003f001f000780038001c041c0c3c0efc1ffc1ffc0ffe1ff"
+  },
+  "udyr": {
+    "name": "udyr",
+    "hash": "100011c023e003f00ffc0f7f873f17ec07fe01fe00fd003d00390097007b007a"
+  },
+  "urgot": {
+    "name": "urgot",
+    "hash": "3ff03ff01ff81ff83ff81f98003000e00008009803f800f001a00090018001c0"
+  },
+  "varus": {
+    "name": "varus",
+    "hash": "700f700f600f600742070d8706bb0bbb0ff90ff10ff90fe00df001f006e00180"
+  },
+  "vayne": {
+    "name": "vayne",
+    "hash": "2400001f007f00ff007f007f002100000ec00ee10cff0cff00ff00fe007c00f8"
+  },
+  "veigar": {
+    "name": "veigar",
+    "hash": "7f0000000000000080008000800f9706fc067c0e5c1ee07ee038f001fc0007e0"
+  },
+  "velkoz": {
+    "name": "velkoz",
+    "hash": "00000000c0c0c1f8e1fe41fe95f1a7f8a3f877ff67fb67f263f621e630c63042"
+  },
+  "vex": {
+    "name": "vex",
+    "hash": "3dff066f03f7007f18f304f101bf39393f1c3f000f8c9fe41f103ff81fe00f80"
+  },
+  "vi": {
+    "name": "vi",
+    "hash": "c7c303e303f3001b003b007e00c7018701df03fc0ffc0ffc0ffc8f98077803f0"
+  },
+  "viego": {
+    "name": "viego",
+    "hash": "fff8fff8c3fd01fc00fe7b807f817fc17fc37f8e7c386fe178c338033807380c"
+  },
+  "viktor": {
+    "name": "viktor",
+    "hash": "f6000000000000c001f0099019c101c1c9c3ebe0eff1f7f3f40ef01cf0104101"
+  },
+  "vladimir": {
+    "name": "vladimir",
+    "hash": "0ff70fff1d7f1fee1fb23f923fb83f803f803c0034003000500040044007401c"
+  },
+  "volibear": {
+    "name": "volibear",
+    "hash": "01ff03ff07ff477f087f0c3f1e1f3f9f07df03ef006f0037006c21c021404001"
+  },
+  "warwick": {
+    "name": "warwick",
+    "hash": "000000000c00020018180008841ee430ffe0e7a0e063e04fe09ff01fc19fcc0f"
+  },
+  "xayah": {
+    "name": "xayah",
+    "hash": "13c00f000c0000600058001c0000000607fc0ffc0ffc0ffc07bc07981fe03fc0"
+  },
+  "xerath": {
+    "name": "xerath",
+    "hash": "fffffe3ffc07f801f000f000e0e0c3e081808001400f40ffc1ff007f4003099b"
+  },
+  "xinzhao": {
+    "name": "xinzhao",
+    "hash": "000000c003e107e147f27ffb7ffb3f79083805f997ffc7fec7fee1f8f1f0f800"
+  },
+  "yasuo": {
+    "name": "yasuo",
+    "hash": "000f08070f0f0f9f0fdf1fdf0fdc07fc39f4382839481ff01fe09ee0fe00fb00"
+  },
+  "yone": {
+    "name": "yone",
+    "hash": "fe00f80cf000e001c003c000c000e000f000f0c0f001f021f801fc03fc1fff17"
+  },
+  "yorick": {
+    "name": "yorick",
+    "hash": "000300010010000001c0051808f80ffb07ff0c7f0cff03f303f333fe3ffc3ffc"
+  },
+  "yuumi": {
+    "name": "yuumi",
+    "hash": "fc78ff1076003ce03fc07f803f800f9f07fc1ff8fe00fbc00001000300038003"
+  },
+  "zac": {
+    "name": "zac",
+    "hash": "303c301e208f000740438843c303c303e007e28ee01ee25cbff8dff8c7e1e083"
+  },
+  "zed": {
+    "name": "zed",
+    "hash": "fdbff99ff185f301f100f3e0cfe0e180e380e08060006000c060e060e0003000"
+  },
+  "zeri": {
+    "name": "zeri",
+    "hash": "ffefffcfffc0fe00fc00fc401ce0f860f0c0f9c11f871f871f071e091e00b300"
+  },
+  "ziggs": {
+    "name": "ziggs",
+    "hash": "d800d880000000000000008100c101e301f601fe01fe003e93ffefffeffef7fc"
+  },
+  "zilean": {
+    "name": "zilean",
+    "hash": "20790079107917ff1d3c1cfe363f1fff1ffe19f830f050f08430801000000000"
+  },
+  "zoe": {
+    "name": "zoe",
+    "hash": "307f003f001f0f00138001f02bf03ffc3fe63fc03ff83ff01ff01ff00fc00000"
+  },
+  "zyra": {
+    "name": "zyra",
+    "hash": "0000838087808f808f001f201e400ff01ff00ff01ff01ff01fc087c083c043e0"
+  }
+}

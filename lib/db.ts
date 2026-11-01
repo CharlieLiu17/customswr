@@ -49,5 +49,11 @@ CREATE TABLE IF NOT EXISTS mmr_adjustments (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_mp_player ON match_players(player_id);
+CREATE TABLE IF NOT EXISTS player_igns (
+  player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  ign TEXT NOT NULL,
+  PRIMARY KEY (player_id, ign)
+);
+CREATE INDEX IF NOT EXISTS idx_igns_ign ON player_igns(ign);
 `;
 export async function ensureSchema() { await db().executeMultiple(SCHEMA); }

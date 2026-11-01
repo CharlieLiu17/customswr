@@ -3,15 +3,19 @@ import type { GameLine, PlayerRow, Result, Role } from './types';
 import { applyResult } from './mmr';
 
 export async function getPlayers(): Promise<PlayerRow[]> {
-  const [p, r] = await Promise.all([
+  const [p, r, i] = await Promise.all([
     db().execute('SELECT * FROM players ORDER BY name COLLATE NOCASE'),
     db().execute('SELECT player_id, role FROM playable_roles'),
+    db().execute('SELECT player_id, ign FROM player_igns'),
   ]);
   const roles = new Map<number, Role[]>();
   for (const x of r.rows) { const id = Number(x.player_id); (roles.get(id) ?? roles.set(id, []).get(id)!).push(String(x.role) as Role); }
+  const igns = new Map<number, string[]>();
+  for (const x of i.rows) { const id = Number(x.player_id); (igns.get(id) ?? igns.set(id, []).get(id)!).push(String(x.ign)); }
   return p.rows.map((x) => ({
     id: Number(x.id), name: String(x.name), start_mmr: Number(x.start_mmr), baseline_mmr: Number(x.baseline_mmr), mmr: Number(x.mmr),
     active: Number(x.active) === 1, one_trick_role: (x.one_trick_role as Role | null) ?? null, playable_roles: roles.get(Number(x.id)) ?? [],
+    igns: igns.get(Number(x.id)) ?? [],
   }));
 }
 
@@ -140,7 +144,7 @@ export async function createPlayer(p: NewPlayer) {
     args: [name, p.start_mmr, p.start_mmr, p.start_mmr, p.one_trick_role ?? null] });
   for (const role of p.playable_roles) await db().execute({ sql: 'INSERT INTO playable_roles VALUES (?,?)', args: [Number(r.lastInsertRowid), role] });
 }
-export async function updatePlayer(id: number, p: { name?: string; playable_roles?: Role[]; one_trick_role?: Role | null; active?: boolean; start_mmr?: number }) {
+export async function updatePlayer(id: number, p: { name?: string; playable_roles?: Role[]; one_trick_role?: Role | null; active?: boolean; start_mmr?: number; igns?: string[] }) {
   if (p.name !== undefined) {
     const name = p.name.trim();
     if (!name) throw new Error('Name required');
@@ -156,6 +160,25 @@ export async function updatePlayer(id: number, p: { name?: string; playable_role
     await db().execute({ sql: 'UPDATE players SET start_mmr=? WHERE id=?', args: [p.start_mmr, id] });
     await recomputeMmr([id], 0);
   }
+  if (p.igns !== undefined) {
+    await updatePlayerIgns(id, p.igns);
+  }
 }
 /** Sheet's "New Baseline": everyone's rubber-band anchor becomes their current MMR (applies to future games). */
 export async function resetBaselines() { await db().execute('UPDATE players SET baseline_mmr = mmr'); }
+
+export async function updatePlayerIgns(playerId: number, igns: string[]) {
+  await db().execute({ sql: 'DELETE FROM player_igns WHERE player_id=?', args: [playerId] });
+  for (const ign of igns) {
+    if (ign.trim()) {
+      await db().execute({ sql: 'INSERT INTO player_igns (player_id, ign) VALUES (?,?)', args: [playerId, ign.trim()] });
+    }
+  }
+}
+
+export async function getIgnMap(): Promise<Map<string, string>> {
+  const r = await db().execute('SELECT p.name, i.ign FROM player_igns i JOIN players p ON p.id = i.player_id');
+  const map = new Map<string, string>();
+  for (const x of r.rows) map.set(String(x.ign).toLowerCase(), String(x.name));
+  return map;
+}
