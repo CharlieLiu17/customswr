@@ -663,18 +663,20 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
       {error && <div className="err">{error}</div>}
       {status && !processing && <div className="muted small">{status}</div>}
 
-      {/* Player entries */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-        <button
-          onClick={rerunRoleAssignment}
-          className="close-btn"
-          title="Re-run role assignment"
-          style={{ fontSize: 16, padding: '4px 8px' }}
-        >
-          ↻
-        </button>
-      </div>
-      <div className="grid g2" style={{ gap: 20 }}>
+      {/* Player entries - only show after extraction */}
+      {players.some(p => p.name) && (
+        <div className="results-enter">
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={rerunRoleAssignment}
+              className="close-btn"
+              title="Re-run role assignment"
+              style={{ fontSize: 16, padding: '4px 8px' }}
+            >
+              ↻
+            </button>
+          </div>
+          <div className="grid g2" style={{ gap: 20 }}>
         {[1, 2].map((teamNum) => (
           <div key={teamNum} className={`card team-${teamNum === 1 ? 'blue' : 'red'}`}>
             <h2 style={{ margin: '0 0 12px' }}>Team {teamNum}</h2>
@@ -771,13 +773,15 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
             </div>
           </div>
         ))}
-      </div>
+          </div>
 
-      <div className="row" style={{ justifyContent: 'flex-end' }}>
-        <button className="primary" disabled={!isValid} onClick={handleSubmit}>
-          Record Game
-        </button>
-      </div>
+          <div className="row" style={{ justifyContent: 'flex-end' }}>
+            <button className="primary" disabled={!isValid} onClick={handleSubmit}>
+              Record Game
+            </button>
+          </div>
+        </div>
+      )}
 
       {showRecordModal && (
         <RecordGameModal
