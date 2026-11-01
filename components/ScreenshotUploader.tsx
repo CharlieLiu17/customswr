@@ -433,13 +433,112 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
         newPlayers[5 + i].matched = true;
       });
 
-      setPlayers(newPlayers);
+      // Auto-assign roles based on champions
+      assignRoles(newPlayers);
       setStatus(`Found ${detectedPlayers.length} players`);
     } catch (err) {
       setError('Extraction failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setProcessing(false);
     }
+  };
+
+  // Role assignment logic (extracted to reuse)
+  const assignRoles = (playerList: PlayerEntry[]) => {
+    const next = [...playerList];
+
+    for (const teamNum of [1, 2] as const) {
+      const teamIndices = next.map((p, i) => p.team === teamNum ? i : -1).filter(i => i >= 0);
+      const assigned = new Set<Role>();
+
+      // Collect already-assigned roles
+      teamIndices.forEach(i => {
+        if (next[i].role) assigned.add(next[i].role as Role);
+      });
+
+      // Pass 1: Process of elimination (only one available role)
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const idx of teamIndices) {
+          if (next[idx].role) continue;
+          const champ = championList.find(c => c.name.toLowerCase() === next[idx].champion.toLowerCase());
+          if (!champ) continue;
+
+          const availableRoles = ROLES.filter(r => champ.roles.includes(r) && !assigned.has(r));
+          if (availableRoles.length === 1) {
+            next[idx].role = availableRoles[0];
+            assigned.add(availableRoles[0]);
+            changed = true;
+            console.log(`[Role] ${next[idx].name} (${champ.name}) -> ${availableRoles[0]} (only option)`);
+          }
+        }
+      }
+
+      // Pass 2: Priority-based assignment
+      const unassigned = teamIndices.filter(i => !next[i].role);
+      const unfilledRoles = ROLES.filter(r => !assigned.has(r));
+
+      for (const role of unfilledRoles) {
+        const candidates: { idx: number; priority: number; champ: string }[] = [];
+
+        for (const idx of unassigned) {
+          if (next[idx].role) continue;
+          const champ = championList.find(c => c.name.toLowerCase() === next[idx].champion.toLowerCase());
+          if (!champ) continue;
+
+          const priority = champ.roles.indexOf(role);
+          if (priority !== -1) {
+            candidates.push({ idx, priority, champ: champ.name });
+          }
+        }
+
+        if (candidates.length === 0) {
+          console.log(`[Role] COLLISION: No one can play ${role} on team ${teamNum}`);
+          continue;
+        }
+
+        if (candidates.length === 1) {
+          const { idx, champ } = candidates[0];
+          next[idx].role = role;
+          assigned.add(role);
+          console.log(`[Role] ${next[idx].name} (${champ}) -> ${role} (only candidate)`);
+        } else {
+          candidates.sort((a, b) => a.priority - b.priority);
+
+          if (candidates[0].priority < candidates[1].priority) {
+            const { idx, champ, priority } = candidates[0];
+            next[idx].role = role;
+            assigned.add(role);
+            console.log(`[Role] ${next[idx].name} (${champ}) -> ${role} (priority ${priority + 1})`);
+          } else {
+            console.log(`[Role] COLLISION for ${role}: ${candidates.filter(c => c.priority === candidates[0].priority).map(c => `${c.champ}@${c.priority + 1}`).join(' vs ')}`);
+          }
+        }
+      }
+
+      // Pass 3: Fill remaining by best available role
+      for (const idx of teamIndices) {
+        if (next[idx].role) continue;
+        const champ = championList.find(c => c.name.toLowerCase() === next[idx].champion.toLowerCase());
+        if (!champ) continue;
+
+        for (const role of champ.roles) {
+          if (!assigned.has(role as Role)) {
+            next[idx].role = role as Role;
+            assigned.add(role as Role);
+            console.log(`[Role] ${next[idx].name} (${champ.name}) -> ${role} (fallback)`);
+            break;
+          }
+        }
+
+        if (!next[idx].role) {
+          console.log(`[Role] UNASSIGNED: ${next[idx].name} (${champ.name})`);
+        }
+      }
+    }
+
+    setPlayers(next);
   };
 
   const updatePlayer = (idx: number, field: keyof PlayerEntry, value: string) => {
@@ -467,109 +566,10 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
     });
   };
 
-  const autoAssignRoles = () => {
-    setPlayers(prev => {
-      const next = [...prev];
-
-      for (const teamNum of [1, 2] as const) {
-        const teamIndices = next.map((p, i) => p.team === teamNum ? i : -1).filter(i => i >= 0);
-        const assigned = new Set<Role>();
-
-        // Collect already-assigned roles
-        teamIndices.forEach(i => {
-          if (next[i].role) assigned.add(next[i].role as Role);
-        });
-
-        // Pass 1: Process of elimination (only one available role)
-        let changed = true;
-        while (changed) {
-          changed = false;
-          for (const idx of teamIndices) {
-            if (next[idx].role) continue;
-            const champ = championList.find(c => c.name.toLowerCase() === next[idx].champion.toLowerCase());
-            if (!champ) continue;
-
-            const availableRoles = ROLES.filter(r => champ.roles.includes(r) && !assigned.has(r));
-            if (availableRoles.length === 1) {
-              next[idx].role = availableRoles[0];
-              assigned.add(availableRoles[0]);
-              changed = true;
-              console.log(`[Role] ${next[idx].name} (${champ.name}) -> ${availableRoles[0]} (only option)`);
-            }
-          }
-        }
-
-        // Pass 2: Priority-based assignment
-        // Build a map of role -> candidates with their priority for that role
-        const unassigned = teamIndices.filter(i => !next[i].role);
-        const unfilledRoles = ROLES.filter(r => !assigned.has(r));
-
-        for (const role of unfilledRoles) {
-          // Find candidates who can play this role, sorted by their priority for it
-          const candidates: { idx: number; priority: number; champ: string }[] = [];
-
-          for (const idx of unassigned) {
-            if (next[idx].role) continue; // Already assigned in this loop
-            const champ = championList.find(c => c.name.toLowerCase() === next[idx].champion.toLowerCase());
-            if (!champ) continue;
-
-            const priority = champ.roles.indexOf(role);
-            if (priority !== -1) {
-              candidates.push({ idx, priority, champ: champ.name });
-            }
-          }
-
-          if (candidates.length === 0) {
-            console.log(`[Role] COLLISION: No one can play ${role} on team ${teamNum}`);
-            continue;
-          }
-
-          if (candidates.length === 1) {
-            // Only one candidate for this role
-            const { idx, champ } = candidates[0];
-            next[idx].role = role;
-            assigned.add(role);
-            console.log(`[Role] ${next[idx].name} (${champ}) -> ${role} (only candidate)`);
-          } else {
-            // Multiple candidates - pick the one with highest priority (lowest index)
-            candidates.sort((a, b) => a.priority - b.priority);
-
-            // Check if there's a clear winner (priority 0 vs others, or unique best)
-            if (candidates[0].priority < candidates[1].priority) {
-              const { idx, champ, priority } = candidates[0];
-              next[idx].role = role;
-              assigned.add(role);
-              console.log(`[Role] ${next[idx].name} (${champ}) -> ${role} (priority ${priority + 1}, beat ${candidates.slice(1).map(c => `${c.champ}@${c.priority + 1}`).join(', ')})`);
-            } else {
-              // Collision: multiple champions have same priority for this role
-              console.log(`[Role] COLLISION for ${role}: ${candidates.filter(c => c.priority === candidates[0].priority).map(c => `${c.champ}@${c.priority + 1}`).join(' vs ')}`);
-            }
-          }
-        }
-
-        // Pass 3: Fill remaining by best available role for each unassigned player
-        for (const idx of teamIndices) {
-          if (next[idx].role) continue;
-          const champ = championList.find(c => c.name.toLowerCase() === next[idx].champion.toLowerCase());
-          if (!champ) continue;
-
-          // Find their highest-priority role that's still available
-          for (const role of champ.roles) {
-            if (!assigned.has(role as Role)) {
-              next[idx].role = role as Role;
-              assigned.add(role as Role);
-              console.log(`[Role] ${next[idx].name} (${champ.name}) -> ${role} (fallback, priority ${champ.roles.indexOf(role) + 1})`);
-              break;
-            }
-          }
-
-          if (!next[idx].role) {
-            console.log(`[Role] UNASSIGNED: ${next[idx].name} (${champ.name}) - no available roles from [${champ.roles.join(', ')}]`);
-          }
-        }
-      }
-      return next;
-    });
+  const rerunRoleAssignment = () => {
+    // Clear existing roles and re-assign
+    const cleared = players.map(p => ({ ...p, role: '' as Role | '' }));
+    assignRoles(cleared);
   };
 
   const filteredChampions = (idx: number) => {
@@ -633,6 +633,16 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
       {status && !processing && <div className="muted small">{status}</div>}
 
       {/* Player entries */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <button
+          onClick={rerunRoleAssignment}
+          className="close-btn"
+          title="Re-run role assignment"
+          style={{ fontSize: 16, padding: '4px 8px' }}
+        >
+          ↻
+        </button>
+      </div>
       <div className="grid g2" style={{ gap: 20 }}>
         {[1, 2].map((teamNum) => (
           <div key={teamNum} className={`card team-${teamNum === 1 ? 'blue' : 'red'}`}>
@@ -732,9 +742,7 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
         ))}
       </div>
 
-      <div className="row">
-        <button onClick={autoAssignRoles}>Auto-assign Roles</button>
-        <span style={{ flex: 1 }} />
+      <div className="row" style={{ justifyContent: 'flex-end' }}>
         <button className="primary" disabled={!isValid} onClick={handleSubmit}>
           Continue to Record Game
         </button>
