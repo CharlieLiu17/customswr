@@ -170,6 +170,13 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
     return () => document.removeEventListener('paste', handlePaste);
   }, [handlePaste]);
 
+  // Auto-clear success message after 15 seconds
+  useEffect(() => {
+    if (!successMsg) return;
+    const timer = setTimeout(() => setSuccessMsg(null), 15000);
+    return () => clearTimeout(timer);
+  }, [successMsg]);
+
   // Find champion icon at fixed offset from name bbox
   const findChampionAtPosition = async (
     ctx: CanvasRenderingContext2D,
@@ -600,9 +607,17 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
       {successMsg && (
-        <div className="success-banner">
-          {successMsg.msg}{' '}
-          <a href={`/games/${successMsg.gameId}`}>View game →</a>
+        <div className="success-banner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>
+            {successMsg.msg}{' '}
+            <a href={`/games/${successMsg.gameId}`}>View game →</a>
+          </span>
+          <button
+            onClick={() => setSuccessMsg(null)}
+            style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: '0 4px', fontSize: 18 }}
+          >
+            ×
+          </button>
         </div>
       )}
 
