@@ -30,7 +30,7 @@ interface PlayerEntry {
   matched: boolean;
 }
 
-const EMPTY_PLAYERS: PlayerEntry[] = Array.from({ length: 10 }, (_, i) => ({
+const createEmptyPlayers = (): PlayerEntry[] => Array.from({ length: 10 }, (_, i) => ({
   name: '',
   champion: '',
   role: '',
@@ -120,7 +120,7 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
   const [image, setImage] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [status, setStatus] = useState('');
-  const [players, setPlayers] = useState<PlayerEntry[]>(EMPTY_PLAYERS);
+  const [players, setPlayers] = useState<PlayerEntry[]>(createEmptyPlayers);
   const [championSearch, setChampionSearch] = useState<Record<number, string>>({});
   const [error, setError] = useState('');
   const [showRecordModal, setShowRecordModal] = useState(false);
@@ -424,7 +424,7 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
       // Sort by Y coordinate and assign to teams
       detectedPlayers.sort((a, b) => a.bbox.y0 - b.bbox.y0);
 
-      const newPlayers = [...EMPTY_PLAYERS];
+      const newPlayers = createEmptyPlayers();
       detectedPlayers.slice(0, 5).forEach((p, i) => {
         newPlayers[i].name = p.playerName;
         newPlayers[i].champion = p.champion || '';
@@ -590,7 +590,7 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
   const handleRecordSuccess = (gameId: number) => {
     setSuccessMsg({ msg: `Game saved! MMRs updated.`, gameId });
     setImage(null);
-    setPlayers(EMPTY_PLAYERS);
+    setPlayers(createEmptyPlayers());
     setStatus('');
     setError('');
   };
@@ -639,7 +639,7 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
           <button onClick={runExtraction} disabled={processing} className="primary">
             {processing ? status : 'Extract Players & Champions'}
           </button>
-          <button onClick={() => { setImage(null); setPlayers(EMPTY_PLAYERS); setStatus(''); }}>
+          <button onClick={() => { setImage(null); setPlayers(createEmptyPlayers()); setStatus(''); }}>
             Clear
           </button>
         </div>
