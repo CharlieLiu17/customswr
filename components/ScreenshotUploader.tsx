@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createWorker } from 'tesseract.js';
 import { ROLES, ROLE_EMOJI, type Role } from '@/lib/types';
+import RecordGameModal from './RecordGameModal';
 
 interface ChampionData {
   name: string;
@@ -122,6 +123,8 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
   const [players, setPlayers] = useState<PlayerEntry[]>(EMPTY_PLAYERS);
   const [championSearch, setChampionSearch] = useState<Record<number, string>>({});
   const [error, setError] = useState('');
+  const [showRecordModal, setShowRecordModal] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<{ msg: string; gameId: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -581,14 +584,27 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
   const isValid = players.every(p => p.name && p.champion && p.role);
 
   const handleSubmit = () => {
-    const team1 = players.filter(p => p.team === 1);
-    const team2 = players.filter(p => p.team === 2);
-    console.log('Teams:', { team1, team2 });
+    setShowRecordModal(true);
+  };
+
+  const handleRecordSuccess = (gameId: number) => {
+    setSuccessMsg({ msg: `Game saved! MMRs updated.`, gameId });
+    setImage(null);
+    setPlayers(EMPTY_PLAYERS);
+    setStatus('');
+    setError('');
   };
 
   return (
     <div className="col" style={{ gap: 20 }}>
       <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+      {successMsg && (
+        <div className="success-banner">
+          {successMsg.msg}{' '}
+          <a href={`/games/${successMsg.gameId}`}>View game →</a>
+        </div>
+      )}
 
       {/* Upload area */}
       <div
@@ -744,9 +760,18 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
 
       <div className="row" style={{ justifyContent: 'flex-end' }}>
         <button className="primary" disabled={!isValid} onClick={handleSubmit}>
-          Continue to Record Game
+          Record Game
         </button>
       </div>
+
+      {showRecordModal && (
+        <RecordGameModal
+          team1={players.filter(p => p.team === 1).map(p => ({ name: p.name, role: p.role as Role }))}
+          team2={players.filter(p => p.team === 2).map(p => ({ name: p.name, role: p.role as Role }))}
+          onClose={() => setShowRecordModal(false)}
+          onSuccess={handleRecordSuccess}
+        />
+      )}
     </div>
   );
 }
