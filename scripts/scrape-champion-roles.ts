@@ -43,7 +43,7 @@ async function getChampionRoles(championId: string): Promise<string[]> {
     }
 
     const html = await res.text();
-    const roles: string[] = [];
+    const roleData: { role: string; pct: number }[] = [];
 
     for (const role of LOLALYTICS_ROLES) {
       const regex = new RegExp(`alt="${role} lane"[^%]*?([\\d.]+)%`, 'i');
@@ -52,12 +52,14 @@ async function getChampionRoles(championId: string): Promise<string[]> {
       if (match) {
         const percentage = parseFloat(match[1]);
         if (percentage >= 10) {
-          roles.push(ROLE_MAP[role]);
+          roleData.push({ role: ROLE_MAP[role], pct: percentage });
         }
       }
     }
 
-    return roles;
+    // Sort by percentage descending (most popular first)
+    roleData.sort((a, b) => b.pct - a.pct);
+    return roleData.map(r => r.role);
   } catch (err) {
     console.error(`  Error:`, err);
     return [];

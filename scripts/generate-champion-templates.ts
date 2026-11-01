@@ -15,8 +15,8 @@ const OUT_FILE = path.join(process.cwd(), 'data', 'champion-templates.json');
 // Template size - inner square inscribed in circular portrait
 const TEMPLATE_SIZE = 27;
 
-// Crop percentage - inscribed square in circle = 1/√2 ≈ 0.707
-const CROP_PERCENT = 1 / Math.sqrt(2);
+// Crop percentage - inscribed square in circle = 1/√2 ≈ 0.707, then zoom in 10% more
+const CROP_PERCENT = (1 / Math.sqrt(2)) * 0.9;
 
 async function main() {
   const files = fs.readdirSync(ICONS_DIR).filter(f => f.endsWith('.png'));

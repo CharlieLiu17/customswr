@@ -47,19 +47,72 @@ const ICON_OFFSET_Y = -8;
 // Crop ratio for center square
 const CROP_RATIO = 1 / Math.sqrt(2);
 
-// Compute RGB Mean Squared Error between image data and template
-function computeMSE(imgData: Uint8ClampedArray, templateRgb: number[]): number {
-  let sum = 0;
+// Check if a pixel is gold-ish (from portrait border)
+function isGoldPixel(r: number, g: number, b: number): boolean {
+  return r > 150 && r < 255 && g > 85 && g < 195 && b < 125 && r > g;
+}
+
+// Check if pixel position is in outer 3px border
+function isOuterBorder(pixelIdx: number, size: number = TEMPLATE_SIZE): boolean {
+  const x = pixelIdx % size;
+  const y = Math.floor(pixelIdx / size);
+  return x < 3 || x >= size - 3 || y < 3 || y >= size - 3;
+}
+
+// Compute combined score: MSE + weighted average RGB distance
+// Returns { mse, avgRgbDist, score } where score combines both metrics
+function computeMatchScore(imgData: Uint8ClampedArray, templateRgb: number[]): number {
+  let mseSum = 0;
   let count = 0;
+  let imgR = 0, imgG = 0, imgB = 0;
+  let tplR = 0, tplG = 0, tplB = 0;
+
   for (let i = 0; i < imgData.length; i += 4) {
-    const ri = i / 4 * 3;
-    const dr = imgData[i] - templateRgb[ri];
-    const dg = imgData[i + 1] - templateRgb[ri + 1];
-    const db = imgData[i + 2] - templateRgb[ri + 2];
-    sum += dr * dr + dg * dg + db * db;
+    const pixelIdx = i / 4;
+    const r = imgData[i];
+    const g = imgData[i + 1];
+    const b = imgData[i + 2];
+
+    // Skip gold pixels in outer border
+    if (isOuterBorder(pixelIdx) && isGoldPixel(r, g, b)) {
+      continue;
+    }
+
+    const ri = pixelIdx * 3;
+    const tr = templateRgb[ri];
+    const tg = templateRgb[ri + 1];
+    const tb = templateRgb[ri + 2];
+
+    // Accumulate for MSE
+    const dr = r - tr;
+    const dg = g - tg;
+    const db = b - tb;
+    mseSum += dr * dr + dg * dg + db * db;
+
+    // Accumulate for average RGB
+    imgR += r; imgG += g; imgB += b;
+    tplR += tr; tplG += tg; tplB += tb;
     count++;
   }
-  return sum / (count * 3);
+
+  if (count === 0) return Infinity;
+
+  const mse = mseSum / (count * 3);
+
+  // Average RGB distance (Euclidean)
+  const avgDr = (imgR - tplR) / count;
+  const avgDg = (imgG - tplG) / count;
+  const avgDb = (imgB - tplB) / count;
+  const avgRgbDist = Math.sqrt(avgDr * avgDr + avgDg * avgDg + avgDb * avgDb);
+
+  // Combined score: MSE + penalty for avg RGB mismatch
+  // Weight avgRGB heavily - a 16px color difference should add ~500+ to score
+  return mse + avgRgbDist * avgRgbDist * 2;
+}
+
+// Alias for backward compatibility
+function computeMSE(imgData: Uint8ClampedArray, templateRgb: number[]): number {
+  return computeMatchScore(imgData, templateRgb);
 }
 
 export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles, championTemplates }: Props) {
@@ -208,18 +261,30 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
         }
       }
 
-      // Fuzzy match for OCR errors
+      // Fuzzy match for OCR errors - handles substitutions anywhere in string
       const fuzzyMatch = (ocrText: string, targetName: string): boolean => {
+        // Exact or substring match
         if (ocrText.includes(targetName) || targetName.includes(ocrText)) {
           return ocrText.length >= targetName.length * 0.4;
         }
-        const minLen = Math.min(ocrText.length, targetName.length);
-        let commonPrefix = 0;
-        for (let i = 0; i < minLen; i++) {
-          if (ocrText[i] === targetName[i]) commonPrefix++;
-          else break;
+
+        // Length mismatch tolerance
+        if (Math.abs(ocrText.length - targetName.length) > 3) {
+          return false;
         }
-        return commonPrefix >= 4 && commonPrefix >= minLen * 0.6;
+
+        // Count matching characters at same positions
+        const minLen = Math.min(ocrText.length, targetName.length);
+        let matches = 0;
+        for (let i = 0; i < minLen; i++) {
+          if (ocrText[i] === targetName[i]) matches++;
+        }
+
+        // Allow up to 2 character errors for names >= 6 chars
+        const maxErrors = ocrText.length >= 10 ? 3 : ocrText.length >= 6 ? 2 : 1;
+        const errors = minLen - matches;
+
+        return errors <= maxErrors && matches >= 4;
       };
 
       // Match words to player names/IGNs
@@ -292,62 +357,27 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
 
       console.log(`Median X: ${medianX}, Median Y spacing: ${medianYSpacing}`);
 
-      // Helper to get same-team neighbor indices
-      const getTeamNeighbors = (i: number): number[] => {
-        const isTeam1 = i < 5;
+      // Identify misaligned players using median voting from all teammates
+      // For each player, calculate expected Y from every other teammate, take median
+      const getExpectedY = (playerIdx: number): number => {
+        const isTeam1 = playerIdx < 5;
         const teamStart = isTeam1 ? 0 : 5;
         const teamEnd = isTeam1 ? 4 : 9;
-        const neighbors: number[] = [];
-        if (i > teamStart) neighbors.push(i - 1);
-        if (i < teamEnd) neighbors.push(i + 1);
-        return neighbors;
-      };
+        const teamBaseIdx = isTeam1 ? 0 : 5;
 
-      // Helper to check if spacing is off
-      const isSpacingOff = (y1: number, y2: number): boolean => {
-        return Math.abs(Math.abs(y2 - y1) - medianYSpacing) > 5;
-      };
-
-      // Identify misaligned players using two-neighbor check
-      const misaligned = new Set<number>();
-
-      for (let i = 0; i < detectedPlayers.length; i++) {
-        const neighbors = getTeamNeighbors(i);
-        const myY = detectedPlayers[i].bbox.y0;
-
-        if (neighbors.length === 2) {
-          // Middle player: check both neighbors
-          const prevOff = isSpacingOff(detectedPlayers[neighbors[0]].bbox.y0, myY);
-          const nextOff = isSpacingOff(myY, detectedPlayers[neighbors[1]].bbox.y0);
-
-          if (prevOff && nextOff) {
-            misaligned.add(i);
-            console.log(`${detectedPlayers[i].playerName}: MISALIGNED (both neighbors show bad spacing)`);
-          }
-        } else if (neighbors.length === 1) {
-          // Edge player: check 1st and 2nd neighbor
-          const isFirst = i === 0 || i === 5;
-          const neighbor1 = neighbors[0];
-          const neighbor2 = isFirst ? neighbor1 + 1 : neighbor1 - 1;
-
-          if (neighbor2 >= 0 && neighbor2 < detectedPlayers.length &&
-              ((i < 5 && neighbor2 < 5) || (i >= 5 && neighbor2 >= 5))) {
-            const spacing2 = Math.abs(detectedPlayers[neighbor2].bbox.y0 - myY);
-            const expectedSpacing2 = medianYSpacing * 2;
-
-            const neighbor1Off = isSpacingOff(myY, detectedPlayers[neighbor1].bbox.y0);
-            const neighbor2Off = Math.abs(spacing2 - expectedSpacing2) > 10;
-
-            if (neighbor1Off && neighbor2Off) {
-              misaligned.add(i);
-              console.log(`${detectedPlayers[i].playerName}: MISALIGNED (edge player, both neighbor spacings off)`);
-            } else if (neighbor1Off && !neighbor2Off) {
-              misaligned.add(neighbor1);
-              console.log(`${detectedPlayers[neighbor1].playerName}: MISALIGNED (detected from edge player ${detectedPlayers[i].playerName})`);
-            }
-          }
+        const expectedValues: number[] = [];
+        for (let j = teamStart; j <= teamEnd; j++) {
+          if (j === playerIdx) continue;
+          // Expected Y for playerIdx based on player j's position
+          const relativeIdx = (playerIdx - teamBaseIdx) - (j - teamBaseIdx);
+          const expectedFromJ = detectedPlayers[j].bbox.y0 + relativeIdx * medianYSpacing;
+          expectedValues.push(expectedFromJ);
         }
-      }
+
+        // Return median of expected values
+        expectedValues.sort((a, b) => a - b);
+        return expectedValues[Math.floor(expectedValues.length / 2)];
+      };
 
       // Correct bounding boxes
       for (let i = 0; i < detectedPlayers.length; i++) {
@@ -361,27 +391,13 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
           correctedX = medianX;
         }
 
-        // If this player is misaligned, find nearest correct anchor and calculate Y
-        if (misaligned.has(i)) {
-          const isTeam1 = i < 5;
-          const teamStart = isTeam1 ? 0 : 5;
-          const teamEnd = isTeam1 ? 4 : 9;
+        // Check if Y is off from median expected Y
+        const expectedY = getExpectedY(i);
+        const yError = Math.abs(player.bbox.y0 - expectedY);
 
-          // Search for nearest non-misaligned player as anchor
-          let anchor = -1;
-          let anchorDist = Infinity;
-          for (let j = teamStart; j <= teamEnd; j++) {
-            if (!misaligned.has(j) && Math.abs(j - i) < anchorDist) {
-              anchor = j;
-              anchorDist = Math.abs(j - i);
-            }
-          }
-
-          if (anchor !== -1) {
-            const anchorY = (detectedPlayers[anchor] as any).correctedY ?? detectedPlayers[anchor].bbox.y0;
-            correctedY = anchorY + (i - anchor) * medianYSpacing;
-            console.log(`${player.playerName}: Y corrected from ${player.bbox.y0} to ${correctedY} (anchored from ${detectedPlayers[anchor].playerName})`);
-          }
+        if (yError > 8) {
+          console.log(`${player.playerName}: Y corrected from ${player.bbox.y0} to ${expectedY} (error: ${yError.toFixed(0)}px)`);
+          correctedY = expectedY;
         }
 
         (player as any).correctedX = correctedX;
@@ -433,12 +449,17 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
       if (field === 'champion') {
         const champ = championList.find(c => c.name.toLowerCase() === value.toLowerCase());
         if (champ && !next[idx].role) {
-          const availableRoles = ROLES.filter(r =>
-            champ.roles.includes(r) &&
-            !next.some((p, i) => i !== idx && p.team === next[idx].team && p.role === r)
+          // Find highest-priority role that's available on this team
+          const takenRoles = new Set(
+            next.filter((p, i) => i !== idx && p.team === next[idx].team && p.role)
+              .map(p => p.role)
           );
-          if (availableRoles.length === 1) {
-            next[idx].role = availableRoles[0];
+
+          for (const role of champ.roles) {
+            if (!takenRoles.has(role as Role)) {
+              next[idx].role = role as Role;
+              break;
+            }
           }
         }
       }
@@ -449,14 +470,17 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
   const autoAssignRoles = () => {
     setPlayers(prev => {
       const next = [...prev];
+
       for (const teamNum of [1, 2] as const) {
         const teamIndices = next.map((p, i) => p.team === teamNum ? i : -1).filter(i => i >= 0);
         const assigned = new Set<Role>();
 
+        // Collect already-assigned roles
         teamIndices.forEach(i => {
           if (next[i].role) assigned.add(next[i].role as Role);
         });
 
+        // Pass 1: Process of elimination (only one available role)
         let changed = true;
         while (changed) {
           changed = false;
@@ -470,7 +494,77 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
               next[idx].role = availableRoles[0];
               assigned.add(availableRoles[0]);
               changed = true;
+              console.log(`[Role] ${next[idx].name} (${champ.name}) -> ${availableRoles[0]} (only option)`);
             }
+          }
+        }
+
+        // Pass 2: Priority-based assignment
+        // Build a map of role -> candidates with their priority for that role
+        const unassigned = teamIndices.filter(i => !next[i].role);
+        const unfilledRoles = ROLES.filter(r => !assigned.has(r));
+
+        for (const role of unfilledRoles) {
+          // Find candidates who can play this role, sorted by their priority for it
+          const candidates: { idx: number; priority: number; champ: string }[] = [];
+
+          for (const idx of unassigned) {
+            if (next[idx].role) continue; // Already assigned in this loop
+            const champ = championList.find(c => c.name.toLowerCase() === next[idx].champion.toLowerCase());
+            if (!champ) continue;
+
+            const priority = champ.roles.indexOf(role);
+            if (priority !== -1) {
+              candidates.push({ idx, priority, champ: champ.name });
+            }
+          }
+
+          if (candidates.length === 0) {
+            console.log(`[Role] COLLISION: No one can play ${role} on team ${teamNum}`);
+            continue;
+          }
+
+          if (candidates.length === 1) {
+            // Only one candidate for this role
+            const { idx, champ } = candidates[0];
+            next[idx].role = role;
+            assigned.add(role);
+            console.log(`[Role] ${next[idx].name} (${champ}) -> ${role} (only candidate)`);
+          } else {
+            // Multiple candidates - pick the one with highest priority (lowest index)
+            candidates.sort((a, b) => a.priority - b.priority);
+
+            // Check if there's a clear winner (priority 0 vs others, or unique best)
+            if (candidates[0].priority < candidates[1].priority) {
+              const { idx, champ, priority } = candidates[0];
+              next[idx].role = role;
+              assigned.add(role);
+              console.log(`[Role] ${next[idx].name} (${champ}) -> ${role} (priority ${priority + 1}, beat ${candidates.slice(1).map(c => `${c.champ}@${c.priority + 1}`).join(', ')})`);
+            } else {
+              // Collision: multiple champions have same priority for this role
+              console.log(`[Role] COLLISION for ${role}: ${candidates.filter(c => c.priority === candidates[0].priority).map(c => `${c.champ}@${c.priority + 1}`).join(' vs ')}`);
+            }
+          }
+        }
+
+        // Pass 3: Fill remaining by best available role for each unassigned player
+        for (const idx of teamIndices) {
+          if (next[idx].role) continue;
+          const champ = championList.find(c => c.name.toLowerCase() === next[idx].champion.toLowerCase());
+          if (!champ) continue;
+
+          // Find their highest-priority role that's still available
+          for (const role of champ.roles) {
+            if (!assigned.has(role as Role)) {
+              next[idx].role = role as Role;
+              assigned.add(role as Role);
+              console.log(`[Role] ${next[idx].name} (${champ.name}) -> ${role} (fallback, priority ${champ.roles.indexOf(role) + 1})`);
+              break;
+            }
+          }
+
+          if (!next[idx].role) {
+            console.log(`[Role] UNASSIGNED: ${next[idx].name} (${champ.name}) - no available roles from [${champ.roles.join(', ')}]`);
           }
         }
       }
