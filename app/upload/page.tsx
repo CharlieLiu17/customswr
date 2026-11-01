@@ -1,5 +1,6 @@
 import { load } from '@/lib/page';
 import ScreenshotUploader from '@/components/ScreenshotUploader';
+import ImportTutorialModal from '@/components/ImportTutorialModal';
 import championRoles from '@/data/champion-roles.json';
 import championTemplates from '@/data/champion-templates.json';
 
@@ -20,6 +21,7 @@ export default async function UploadPage() {
 
   return (
     <>
+      <ImportTutorialModal />
       <h1>Import from Screenshot</h1>
       <p className="muted" style={{ marginBottom: 16 }}>
         Upload or paste a post-game lobby screenshot. Player names and champions will be extracted automatically.

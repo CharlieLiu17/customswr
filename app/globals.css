@@ -121,3 +121,17 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:-1p
   .hero-actions { flex-direction:column; width:100%; }
   .hero-actions .btn.big { width:100%; text-align:center; }
 }
+
+/* Tutorial Modal */
+.tutorial-modal { max-width:700px; }
+.tutorial-modal h2 { font-size:22px; margin-bottom:20px; }
+.tutorial-content { display:flex; flex-direction:column; gap:16px; }
+.tutorial-content > p { margin:0; font-size:15px; line-height:1.6; }
+.tutorial-content ul { margin:0; padding-left:24px; }
+.tutorial-content li { margin:4px 0; line-height:1.5; }
+.tutorial-image-container { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:12px; }
+.tutorial-image { width:100%; height:auto; border-radius:6px; }
+.tutorial-tips { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:12px 16px; font-size:14px; }
+.tutorial-tips ul { margin:8px 0 0; padding-left:20px; }
+.tutorial-tips li { color:var(--muted); }
+.modal-actions { display:flex; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid var(--line); }
