@@ -6,7 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const VERSION = '14.22.1';
+const VERSION = '16.21.1';
 const OUT_DIR = path.join(process.cwd(), 'public', 'champions');
 
 async function main() {

@@ -487,6 +487,13 @@
       "mid"
     ]
   },
+  "locke": {
+    "name": "Locke",
+    "roles": [
+      "mid",
+      "jungle"
+    ]
+  },
   "lucian": {
     "name": "Lucian",
     "roles": [
@@ -532,6 +539,13 @@
       "jungle"
     ]
   },
+  "mel": {
+    "name": "Mel",
+    "roles": [
+      "mid",
+      "support"
+    ]
+  },
   "milio": {
     "name": "Milio",
     "roles": [
@@ -547,8 +561,11 @@
   "monkeyking": {
     "name": "Wukong",
     "roles": [
+      "top",
       "jungle",
-      "top"
+      "mid",
+      "bot",
+      "support"
     ]
   },
   "mordekaiser": {
@@ -1059,10 +1076,23 @@
       "top"
     ]
   },
+  "yunara": {
+    "name": "Yunara",
+    "roles": [
+      "bot"
+    ]
+  },
   "yuumi": {
     "name": "Yuumi",
     "roles": [
       "support"
+    ]
+  },
+  "zaahen": {
+    "name": "Zaahen",
+    "roles": [
+      "top",
+      "jungle"
     ]
   },
   "zac": {
