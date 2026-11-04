@@ -15,8 +15,7 @@ export default function Nav({ admin }: { admin: boolean }) {
         <div className="nav-links">
           <Link className="link" href="/records" onClick={() => setOpen(false)}>Records</Link>
           <Link className="link" href="/matchmaking" onClick={() => setOpen(false)}>Matchmaking</Link>
-          <Link className="link" href="/new" onClick={() => setOpen(false)}>Log game</Link>
-          <Link className="link" href="/upload" onClick={() => setOpen(false)}>Import</Link>
+          <Link className="link" href="/new" onClick={() => setOpen(false)}>New Game</Link>
           <Link className="link" href="/games" onClick={() => setOpen(false)}>Games</Link>
           <Link className="link" href="/head-to-head" onClick={() => setOpen(false)}>Head-to-head</Link>
           <Link className="link" href="/matrix" onClick={() => setOpen(false)}>Matrix</Link>

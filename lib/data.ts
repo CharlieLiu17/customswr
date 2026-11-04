@@ -111,7 +111,7 @@ export async function createMatch(inp: MatchInput): Promise<number> {
   const id = Number(r.lastInsertRowid);
   await writeEntries(id, inp, ids);
   await recomputeMmr([...ids.values()], seq);
-  return id;
+  return seq;
 }
 
 export async function updateMatch(id: number, inp: MatchInput) {

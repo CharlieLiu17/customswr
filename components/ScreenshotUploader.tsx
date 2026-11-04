@@ -616,7 +616,7 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
         <div className="success-banner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span>
             {successMsg.msg}{' '}
-            <a href={`/games/${successMsg.gameId}`}>View game →</a>
+            <a href={`/games/${successMsg.gameId}/edit`}>View game →</a>
           </span>
           <button
             onClick={() => setSuccessMsg(null)}

@@ -2,8 +2,10 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 import { ROLES, ROLE_EMOJI, type Role } from '@/lib/types';
 import championRolesData from '@/data/champion-roles.json';
+import BackfillModal from './BackfillModal';
 
 export interface FormPlayer { name: string; mmr: number; playable: Role[]; active: boolean }
 export interface Initial { id?: number; date: string; team0: (string | '')[]; team1: (string | '')[]; champs0?: (string | '')[]; champs1?: (string | '')[]; winner?: 0 | 1 | null; notes?: string }
@@ -32,6 +34,7 @@ export default function MatchForm({ players, admin, initial }: { players: FormPl
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [grabbed, setGrabbed] = useState<{ team: 0 | 1; idx: number } | null>(null);
+  const [showBackfill, setShowBackfill] = useState(false);
   const byName = useMemo(() => new Map(players.map((p) => [p.name, p])), [players]);
   const used = new Set([...t0, ...t1].filter(Boolean));
   const complete = t0.every(Boolean) && t1.every(Boolean);
@@ -89,10 +92,10 @@ export default function MatchForm({ players, admin, initial }: { players: FormPl
         return (
           <div className="slot" key={role}>
             <span title={role}>{ROLE_EMOJI[role]}</span>
-            <div style={{ position: 'relative', flex: 1 }}>
+            <div style={{ position: 'relative', width: 90, flexShrink: 0 }}>
               <div style={{ position: 'relative' }}>
                 {champ && champSearch[searchKey] === undefined && (
-                  <Image src={championIconPath(champ)} alt={champ} width={18} height={18} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', borderRadius: 3, pointerEvents: 'none', zIndex: 1 }} />
+                  <Image src={championIconPath(champ)} alt={champ} width={18} height={18} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', borderRadius: 3, pointerEvents: 'none', zIndex: 1 }} />
                 )}
                 <input
                   type="text"
@@ -101,7 +104,7 @@ export default function MatchForm({ players, admin, initial }: { players: FormPl
                   onChange={(e) => setChampSearch(prev => ({ ...prev, [searchKey]: e.target.value }))}
                   onFocus={() => setChampSearch(prev => ({ ...prev, [searchKey]: champ }))}
                   onBlur={() => setTimeout(() => setChampSearch(prev => { const next = { ...prev }; delete next[searchKey]; return next; }), 200)}
-                  style={{ width: '100%', paddingLeft: champ && champSearch[searchKey] === undefined ? 32 : undefined, fontSize: 13 }}
+                  style={{ width: '100%', paddingTop: 6, paddingBottom: 6, paddingRight: 8, paddingLeft: champ && champSearch[searchKey] === undefined ? 28 : 8, fontSize: 12 }}
                 />
               </div>
               {champSearch[searchKey] !== undefined && (
@@ -129,10 +132,19 @@ export default function MatchForm({ players, admin, initial }: { players: FormPl
     </div>
   );
 
+  const handleBackfill = (champs: string[]) => {
+    setC0(champs.slice(0, 5));
+    setC1(champs.slice(5, 10));
+    setShowBackfill(false);
+    setMsg({ ok: true, text: 'Champions extracted! Review and save.' });
+  };
+
   return (
     <div className="col">
       <div className="row"><label>Date <input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-        <input placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} style={{ flex: 1, minWidth: 180 }} /></div>
+        <input placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
+        {initial?.id && <button onClick={() => setShowBackfill(true)} title="Backfill champions from screenshot" style={{ display: 'inline-flex', alignItems: 'center' }}><FileUploadIcon style={{ fontSize: 18, marginRight: 6 }} />Backfill</button>}
+      </div>
       <div className="grid g2">{col('Team 1', 'team-blue', t0, setT0, c0, setC0, 0)}{col('Team 2', 'team-red', t1, setT1, c1, setC1, 1)}</div>
       {!admin && <div className="err">You need to <a href="/admin">log in as admin</a> to save games.</div>}
       <div className="row">
@@ -140,6 +152,7 @@ export default function MatchForm({ players, admin, initial }: { players: FormPl
         <button className="big red" disabled={!complete || busy || !admin} onClick={() => save(1)}>{initial?.id ? 'Save — ' : ''}Team 2 won</button>
       </div>
       {msg && <div className={msg.ok ? 'ok' : 'err'}>{msg.text}</div>}
+      {showBackfill && <BackfillModal playerNames={[...t0, ...t1]} onExtract={handleBackfill} onClose={() => setShowBackfill(false)} />}
     </div>
   );
 }

@@ -29,7 +29,7 @@ export default async function Games({ searchParams }: { searchParams: Promise<{ 
       const losers = g.filter((l) => l.result === 'L').sort((a, b) => ROLES.indexOf(a.role ?? 'Top') - ROLES.indexOf(b.role ?? 'Top'));
       return (<div className="card" key={g[0].match_id}>
         <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}><span><b>#{g[0].seq}</b> <span className="muted">{g[0].date}</span> {g[0].incomplete && <span className="pill warn" title="The sheet has fewer than 5 wins and 5 losses recorded for this game">incomplete</span>}</span>
-          {admin && <span className="row"><Link className="btn" href={`/games/${g[0].match_id}/edit`}>Edit</Link><DeleteGame id={g[0].match_id} /></span>}</div>
+          {admin && <span className="row"><Link className="btn" href={`/games/${g[0].seq}/edit`}>Edit</Link><DeleteGame id={g[0].match_id} /></span>}</div>
         <div className="grid g2" style={{ gap: 12 }}>
           <div>
             <div className="W" style={{ fontWeight: 600, marginBottom: 4 }}>Winning Team</div>
