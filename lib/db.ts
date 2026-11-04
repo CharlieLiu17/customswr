@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS match_players (
   team INTEGER NOT NULL,
   result TEXT NOT NULL CHECK (result IN ('W','L')),
   role TEXT,
+  champion TEXT,
   base_mmr REAL,
   mmr_after REAL,
   PRIMARY KEY (match_id, player_id)

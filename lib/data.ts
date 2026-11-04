@@ -22,17 +22,18 @@ export async function getPlayers(): Promise<PlayerRow[]> {
 export async function getLines(): Promise<GameLine[]> {
   const r = await db().execute(`
     SELECT m.id AS match_id, m.seq, m.played_on AS date, m.incomplete, p.id AS player_id, p.name AS player,
-           mp.team, mp.result, mp.role, mp.mmr_after
+           mp.team, mp.result, mp.role, mp.champion, mp.mmr_after
     FROM match_players mp JOIN matches m ON m.id = mp.match_id JOIN players p ON p.id = mp.player_id
     ORDER BY m.seq, mp.team, p.name`);
   return r.rows.map((x) => ({
     match_id: Number(x.match_id), seq: Number(x.seq), date: String(x.date), incomplete: Number(x.incomplete) === 1,
     player_id: Number(x.player_id), player: String(x.player), team: Number(x.team) as 0 | 1,
-    result: String(x.result) as Result, role: (x.role as Role | null) ?? null, mmr_after: x.mmr_after == null ? null : Number(x.mmr_after),
+    result: String(x.result) as Result, role: (x.role as Role | null) ?? null,
+    champion: (x.champion as string | null) ?? null, mmr_after: x.mmr_after == null ? null : Number(x.mmr_after),
   }));
 }
 
-export interface EntryInput { player: string; role: Role | null }
+export interface EntryInput { player: string; role: Role | null; champion?: string | null }
 export interface MatchInput { date: string; team0: EntryInput[]; team1: EntryInput[]; winner: 0 | 1; notes?: string | null }
 
 function validate(inp: MatchInput) {
@@ -96,8 +97,8 @@ async function writeEntries(matchId: number, inp: MatchInput, ids: Map<string, n
       const pid = ids.get(e.player)!;
       const base = Number((await db().execute({ sql: 'SELECT baseline_mmr FROM players WHERE id=?', args: [pid] })).rows[0].baseline_mmr);
       await db().execute({
-        sql: 'INSERT INTO match_players (match_id, player_id, team, result, role, base_mmr) VALUES (?,?,?,?,?,?)',
-        args: [matchId, pid, team, team === inp.winner ? 'W' : 'L', e.role, base] });
+        sql: 'INSERT INTO match_players (match_id, player_id, team, result, role, champion, base_mmr) VALUES (?,?,?,?,?,?,?)',
+        args: [matchId, pid, team, team === inp.winner ? 'W' : 'L', e.role, e.champion ?? null, base] });
     }
   }
 }

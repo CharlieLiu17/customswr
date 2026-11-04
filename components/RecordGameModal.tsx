@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { ROLE_EMOJI, type Role } from '@/lib/types';
 
 interface Player {
   name: string;
   role: Role;
+  champion?: string;
 }
 
 interface Props {
@@ -14,6 +16,11 @@ interface Props {
   team2: Player[];
   onClose: () => void;
   onSuccess?: (gameId: number) => void;
+}
+
+function championIconPath(champion: string): string {
+  const id = champion.replace(/[^a-zA-Z]/g, '').toLowerCase();
+  return `/champions/${id}.png`;
 }
 
 export default function RecordGameModal({ team1, team2, onClose, onSuccess }: Props) {
@@ -59,8 +66,8 @@ export default function RecordGameModal({ team1, team2, onClose, onSuccess }: Pr
     const body = {
       date: new Date().toLocaleDateString('en-CA'),
       winner,
-      team0: modalTeams.a.map(({ name, role }) => ({ player: name, role })),
-      team1: modalTeams.b.map(({ name, role }) => ({ player: name, role })),
+      team0: modalTeams.a.map(({ name, role, champion }) => ({ player: name, role, champion })),
+      team1: modalTeams.b.map(({ name, role, champion }) => ({ player: name, role, champion })),
     };
 
     const r = await fetch('/api/matches', {
@@ -103,7 +110,7 @@ export default function RecordGameModal({ team1, team2, onClose, onSuccess }: Pr
                       {modalTeams.a.map((p) => (
                         <tr key={p.name}>
                           <td>{ROLE_EMOJI[p.role]}</td>
-                          <td>{p.name}</td>
+                          <td>{p.champion && <Image src={championIconPath(p.champion)} alt={p.champion} width={24} height={24} style={{ borderRadius: 4, verticalAlign: 'middle', marginRight: 6 }} />}{p.name}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -116,7 +123,7 @@ export default function RecordGameModal({ team1, team2, onClose, onSuccess }: Pr
                       {modalTeams.b.map((p) => (
                         <tr key={p.name}>
                           <td>{ROLE_EMOJI[p.role]}</td>
-                          <td>{p.name}</td>
+                          <td>{p.champion && <Image src={championIconPath(p.champion)} alt={p.champion} width={24} height={24} style={{ borderRadius: 4, verticalAlign: 'middle', marginRight: 6 }} />}{p.name}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -149,7 +156,7 @@ export default function RecordGameModal({ team1, team2, onClose, onSuccess }: Pr
                       {modalTeams.a.map((p, i) => (
                         <tr key={p.name}>
                           <td>{ROLE_EMOJI[p.role]}</td>
-                          <td>{p.name}</td>
+                          <td>{p.champion && <Image src={championIconPath(p.champion)} alt={p.champion} width={24} height={24} style={{ borderRadius: 4, verticalAlign: 'middle', marginRight: 6 }} />}{p.name}</td>
                           <td>
                             <button
                               className={`grab ${grabbed?.team === 0 && grabbed?.idx === i ? 'on' : ''}`}
@@ -170,7 +177,7 @@ export default function RecordGameModal({ team1, team2, onClose, onSuccess }: Pr
                       {modalTeams.b.map((p, i) => (
                         <tr key={p.name}>
                           <td>{ROLE_EMOJI[p.role]}</td>
-                          <td>{p.name}</td>
+                          <td>{p.champion && <Image src={championIconPath(p.champion)} alt={p.champion} width={24} height={24} style={{ borderRadius: 4, verticalAlign: 'middle', marginRight: 6 }} />}{p.name}</td>
                           <td>
                             <button
                               className={`grab ${grabbed?.team === 1 && grabbed?.idx === i ? 'on' : ''}`}

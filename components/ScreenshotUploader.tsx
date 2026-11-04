@@ -2,8 +2,14 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createWorker } from 'tesseract.js';
+import NextImage from 'next/image';
 import { ROLES, ROLE_EMOJI, type Role } from '@/lib/types';
 import RecordGameModal from './RecordGameModal';
+
+function championIconPath(champion: string): string {
+  const id = champion.replace(/[^a-zA-Z]/g, '').toLowerCase();
+  return `/champions/${id}.png`;
+}
 
 interface ChampionData {
   name: string;
@@ -702,25 +708,36 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
 
                     {/* Champion */}
                     <div style={{ position: 'relative', flex: 1 }}>
-                      <input
-                        type="text"
-                        placeholder="Champion..."
-                        value={championSearch[idx] ?? player.champion}
-                        onChange={(e) => {
-                          setChampionSearch(prev => ({ ...prev, [idx]: e.target.value }));
-                        }}
-                        onFocus={() => setChampionSearch(prev => ({ ...prev, [idx]: player.champion }))}
-                        onBlur={() => {
-                          setTimeout(() => {
-                            setChampionSearch(prev => {
-                              const next = { ...prev };
-                              delete next[idx];
-                              return next;
-                            });
-                          }, 200);
-                        }}
-                        style={{ width: '100%' }}
-                      />
+                      <div style={{ position: 'relative' }}>
+                        {player.champion && championSearch[idx] === undefined && (
+                          <NextImage
+                            src={championIconPath(player.champion)}
+                            alt={player.champion}
+                            width={20}
+                            height={20}
+                            style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', borderRadius: 3, pointerEvents: 'none', zIndex: 1 }}
+                          />
+                        )}
+                        <input
+                          type="text"
+                          placeholder="Champion..."
+                          value={championSearch[idx] ?? player.champion}
+                          onChange={(e) => {
+                            setChampionSearch(prev => ({ ...prev, [idx]: e.target.value }));
+                          }}
+                          onFocus={() => setChampionSearch(prev => ({ ...prev, [idx]: player.champion }))}
+                          onBlur={() => {
+                            setTimeout(() => {
+                              setChampionSearch(prev => {
+                                const next = { ...prev };
+                                delete next[idx];
+                                return next;
+                              });
+                            }, 200);
+                          }}
+                          style={{ width: '100%', paddingLeft: player.champion && championSearch[idx] === undefined ? 34 : undefined }}
+                        />
+                      </div>
                       {championSearch[idx] !== undefined && (
                         <div style={{
                           position: 'absolute',
@@ -737,7 +754,7 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
                           {filteredChampions(idx).map(c => (
                             <div
                               key={c.id}
-                              style={{ padding: '8px 10px', cursor: 'pointer' }}
+                              style={{ padding: '8px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
                               onMouseDown={() => {
                                 updatePlayer(idx, 'champion', c.name);
                                 setChampionSearch(prev => {
@@ -747,6 +764,7 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
                                 });
                               }}
                             >
+                              <NextImage src={championIconPath(c.name)} alt={c.name} width={20} height={20} style={{ borderRadius: 3 }} />
                               {c.name} <span className="muted small">({c.roles.join('/')})</span>
                             </div>
                           ))}
@@ -785,8 +803,8 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
 
       {showRecordModal && (
         <RecordGameModal
-          team1={players.filter(p => p.team === 1).map(p => ({ name: p.name, role: p.role as Role }))}
-          team2={players.filter(p => p.team === 2).map(p => ({ name: p.name, role: p.role as Role }))}
+          team1={players.filter(p => p.team === 1).map(p => ({ name: p.name, role: p.role as Role, champion: p.champion }))}
+          team2={players.filter(p => p.team === 2).map(p => ({ name: p.name, role: p.role as Role, champion: p.champion }))}
           onClose={() => setShowRecordModal(false)}
           onSuccess={handleRecordSuccess}
         />

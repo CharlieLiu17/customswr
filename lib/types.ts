@@ -11,5 +11,5 @@ export interface PlayerRow {
 export interface GameLine {
   match_id: number; seq: number; date: string; incomplete: boolean;
   player_id: number; player: string; team: 0 | 1; result: Result; role: Role | null;
-  mmr_after: number | null;
+  champion: string | null; mmr_after: number | null;
 }
