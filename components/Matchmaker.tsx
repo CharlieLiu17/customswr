@@ -8,6 +8,7 @@ import ImageIcon from '@mui/icons-material/Image';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SettingsIcon from '@mui/icons-material/Settings';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 
 interface P { name: string; mmr: number; active: boolean; games: number; recentGames: number; last10: { w: number; l: number } }
 interface Side { players: { name: string; mmr: number; role: Role }[]; total: number; synergy: number | null; against: number | null; estimate: number | null }
@@ -33,6 +34,10 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   const [editMode, setEditMode] = useState(false);
   const [modalTeams, setModalTeams] = useState<{ a: Side['players']; b: Side['players'] } | null>(null);
   const [grabbed, setGrabbed] = useState<{ team: 0 | 1; idx: number } | null>(null);
+  const [swapMode, setSwapMode] = useState(false);
+  const [swappedTeams, setSwappedTeams] = useState<{ a: Side['players']; b: Side['players'] } | null>(null);
+  const [swappedStats, setSwappedStats] = useState<{ a: { synergy: number | null; against: number | null; estimate: number | null }; b: { synergy: number | null; against: number | null; estimate: number | null } } | null>(null);
+  const [inlineGrabbed, setInlineGrabbed] = useState<{ team: 0 | 1; idx: number } | null>(null);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -61,7 +66,27 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   }, [players, filtered]);
   const shown = useMemo(() => [...sections.regulars, ...sections.newPlayers, ...sections.others], [sections]);
   const toggle = (n: string) => { setRes(null); setOk(null); setSel((s) => (s.includes(n) ? s.filter((x) => x !== n) : s.length < 10 ? [...s, n] : s)); };
-  const selectPick = (i: number) => { if (i === pick) return; setSlideDir(i > pick ? 'right' : 'left'); setPick(i); setAnimKey((k) => k + 1); };
+  const selectPick = (i: number) => { if (i === pick) return; setSlideDir(i > pick ? 'right' : 'left'); setPick(i); setAnimKey((k) => k + 1); setSwapMode(false); setSwappedTeams(null); setSwappedStats(null); setInlineGrabbed(null); };
+
+  async function recalcStats(teams: { a: Side['players']; b: Side['players'] }) {
+    const r = await fetch('/api/team-stats', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ teamA: teams.a.map(p => p.name), teamB: teams.b.map(p => p.name) }),
+    });
+    if (r.ok) {
+      const stats = await r.json();
+      setSwappedStats(stats);
+    }
+  }
+
+  function toggleSwapMode() {
+    if (swapMode && swappedTeams) {
+      recalcStats(swappedTeams);
+    }
+    setSwapMode(!swapMode);
+    setInlineGrabbed(null);
+  }
 
   // Auto-generate if loaded with 10 players from URL
   useEffect(() => {
@@ -78,10 +103,32 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   function openRecordModal() {
     if (!res) return;
     const o = res.options[pick];
-    setModalTeams({ a: [...o.a.players], b: [...o.b.players] });
+    const teams = swappedTeams || { a: [...o.a.players], b: [...o.b.players] };
+    setModalTeams({ a: [...teams.a], b: [...teams.b] });
     setEditMode(false);
     setGrabbed(null);
     setModalOpen(true);
+  }
+
+  function handleInlineGrab(team: 0 | 1, idx: number) {
+    if (!res) return;
+    const o = res.options[pick];
+    const teams = swappedTeams || { a: [...o.a.players], b: [...o.b.players] };
+    if (!inlineGrabbed) { setInlineGrabbed({ team, idx }); return; }
+    const srcTeam = inlineGrabbed.team === 0 ? [...teams.a] : [...teams.b];
+    const dstTeam = team === 0 ? [...teams.a] : [...teams.b];
+    const srcPlayer = srcTeam[inlineGrabbed.idx];
+    const dstPlayer = dstTeam[idx];
+    if (inlineGrabbed.team === team) {
+      srcTeam[inlineGrabbed.idx] = { ...dstPlayer, role: srcPlayer.role };
+      srcTeam[idx] = { ...srcPlayer, role: dstPlayer.role };
+      setSwappedTeams(inlineGrabbed.team === 0 ? { a: srcTeam, b: teams.b } : { a: teams.a, b: srcTeam });
+    } else {
+      srcTeam[inlineGrabbed.idx] = { ...dstPlayer, role: srcPlayer.role };
+      dstTeam[idx] = { ...srcPlayer, role: dstPlayer.role };
+      setSwappedTeams({ a: inlineGrabbed.team === 0 ? srcTeam : dstTeam, b: inlineGrabbed.team === 1 ? srcTeam : dstTeam });
+    }
+    setInlineGrabbed(null);
   }
 
   function handleGrab(team: 0 | 1, idx: number) {
@@ -146,22 +193,28 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
       </svg>
     );
   };
-  const side = (s: Side, label: string, cls: string) => (
-    <div className={`card ${cls}`}>
-      <div className="row" style={{ justifyContent: 'space-between' }}><b>{label}</b><span className="muted">Σ {Math.round(s.total)} · avg {Math.round(s.total / 5)}</span></div>
-      <table><tbody>{s.players.map((p) => {
-        const pl = players.find((x) => x.name === p.name);
-        return (
-          <tr key={p.name}>
-            <td>{ROLE_EMOJI[p.role]} <span className="muted small">{p.role}</span></td>
-            <td><span className="player-hover"><a href={`/players/${encodeURIComponent(p.name)}`} target="_blank" rel="noopener noreferrer">{p.name}</a>{pl && <span className="player-tooltip"><RingChart w={pl.last10.w} l={pl.last10.l} /><span className="muted small">Last 10</span></span>}</span></td>
-            <td className="num">{Math.round(p.mmr)}</td>
-          </tr>
-        );
-      })}</tbody></table>
-      <div className="small muted" style={{ marginTop: 8 }}>Synergy WR {pct(s.synergy)} · Against WR {pct(s.against)} · <b style={{ color: 'var(--text)' }}>Est. {pct(s.estimate)}</b></div>
-    </div>
-  );
+  const side = (s: Side, label: string, cls: string, teamIdx: 0 | 1, displayPlayers?: Side['players']) => {
+    const pList = displayPlayers || s.players;
+    const total = displayPlayers ? displayPlayers.reduce((sum, p) => sum + p.mmr, 0) : s.total;
+    const stats = swappedStats && displayPlayers ? swappedStats[teamIdx === 0 ? 'a' : 'b'] : { synergy: s.synergy, against: s.against, estimate: s.estimate };
+    return (
+      <div className={`card ${cls}`}>
+        <div className="row" style={{ justifyContent: 'space-between' }}><b>{label}</b><span className="muted">Σ {Math.round(total)} · avg {Math.round(total / 5)}</span></div>
+        <table><tbody>{pList.map((p, i) => {
+          const pl = players.find((x) => x.name === p.name);
+          return (
+            <tr key={p.name}>
+              <td>{ROLE_EMOJI[p.role]} <span className="muted small">{p.role}</span></td>
+              <td><span className="player-hover"><a href={`/players/${encodeURIComponent(p.name)}`} target="_blank" rel="noopener noreferrer">{p.name}</a>{pl && <span className="player-tooltip"><RingChart w={pl.last10.w} l={pl.last10.l} /><span className="muted small">Last 10</span></span>}</span></td>
+              <td className="num">{Math.round(p.mmr)}</td>
+              {swapMode && <td><button className={`grab ${inlineGrabbed?.team === teamIdx && inlineGrabbed?.idx === i ? 'on' : ''}`} onClick={() => handleInlineGrab(teamIdx, i)}>⇅</button></td>}
+            </tr>
+          );
+        })}</tbody></table>
+        {!swapMode && <div className="small muted" style={{ marginTop: 8 }}>Synergy WR {pct(stats.synergy)} · Against WR {pct(stats.against)} · <b style={{ color: 'var(--text)' }}>Est. {pct(stats.estimate)}</b></div>}
+      </div>
+    );
+  };
   const o = res?.options[pick];
   return (
     <div className="col">
@@ -173,6 +226,14 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
             <div className="settings-row"><span>Show inactive</span><button className={`toggle ${showInactive ? 'on' : ''}`} onClick={() => setShowInactive(!showInactive)}><span className="toggle-knob" /></button></div>
           </div>}
         </div>
+        <span className="info-hint">
+          <InfoOutlinedIcon style={{ fontSize: 18, color: 'var(--muted)' }} />
+          <span className="info-tooltip elo-legend">
+            <span className="elo-row"><span className="elo-swatch elo-high" />1400+</span>
+            <span className="elo-row"><span className="elo-swatch elo-mid" />1100–1399</span>
+            <span className="elo-row"><span className="elo-swatch elo-low" />Below 1100</span>
+          </span>
+        </span>
         <span style={{ flex: 1 }} /><span style={{ fontSize: 20 }}><b style={{ color: sel.length === 10 ? 'var(--text)' : 'var(--muted)' }}>{sel.length}</b> / 10</span><span style={{ flex: 1 }} /><button className="clear-btn" onClick={() => { setSel([]); setRes(null); }}>Clear</button></div>
       {q ? (
         <div className="chips">{shown.map((p, i) => <span key={p.name} className={`chip ${sel.includes(p.name) ? 'on' : ''} ${i === 0 ? 'highlight' : ''}`} onClick={() => toggle(p.name)}>{p.name}<small className={eloTier(p.mmr)}>{Math.round(p.mmr)}</small></span>)}</div>
@@ -193,10 +254,17 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
           <span className="info-hint"><InfoOutlinedIcon style={{ fontSize: 16, color: 'var(--muted)' }} /><span className="info-tooltip">Use ← → keys to navigate</span></span>
           <span style={{ flex: 1 }} />
           <button onClick={copyLink}>{copied === 'link' ? 'Copied!' : <><LinkIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Link</>}</button>
-          <button onClick={copyImage}>{copied === 'image' ? 'Copied!' : <><ImageIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Image</>}</button></div>
+          <button onClick={copyImage}>{copied === 'image' ? 'Copied!' : <><ImageIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />Copy Image</>}</button>
+          <button className={swapMode ? 'primary' : ''} onClick={toggleSwapMode} title="Swap players" style={{ display: 'flex', alignItems: 'center', padding: '8px 10px' }}><SwapHorizIcon style={{ fontSize: 18 }} /></button></div>
         <div ref={captureRef} key={animKey} className={`pick-content ${slideDir === 'left' ? 'slide-left' : slideDir === 'right' ? 'slide-right' : ''}`}>
-          <div className="side-pick-banner">Delta is <b>{Math.round(o.delta)}</b>. Team {o.a.total < o.b.total ? '1' : '2'} is lower, so <b>Team {o.a.total < o.b.total ? '1' : '2'}</b> gets to choose side.</div>
-          <div className="grid g2">{side(o.a, 'Team 1', 'team-blue')}{side(o.b, 'Team 2', 'team-red')}</div>
+          <div className="side-pick-banner">{(() => {
+            const totalA = swappedTeams?.a ? swappedTeams.a.reduce((sum, p) => sum + p.mmr, 0) : o.a.total;
+            const totalB = swappedTeams?.b ? swappedTeams.b.reduce((sum, p) => sum + p.mmr, 0) : o.b.total;
+            const delta = Math.abs(totalA - totalB);
+            const lowerTeam = totalA < totalB ? '1' : '2';
+            return <>Delta is <b>{Math.round(delta)}</b>. Team {lowerTeam} is lower, so <b>Team {lowerTeam}</b> gets to choose side.</>;
+          })()}</div>
+          <div className="grid g2">{side(o.a, 'Team 1', 'team-blue', 0, swappedTeams?.a)}{side(o.b, 'Team 2', 'team-red', 1, swappedTeams?.b)}</div>
         </div>
         <div className="row action-row">
           <a href="https://drafter.lol" target="_blank" rel="noopener noreferrer" className="btn action-btn draft-btn">Draft<OpenInNewIcon style={{ fontSize: 16, marginLeft: 6 }} /></a>

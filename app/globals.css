@@ -90,10 +90,19 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:-1p
 .pick-content.slide-left { animation:slideLeft 0.2s ease-out; }
 .pick-content.slide-right { animation:slideRight 0.2s ease-out; }
 .chips { display:flex; flex-wrap:wrap; gap:6px; } .chips-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(max(140px, calc((100% - 18px) / 4)), 1fr)); gap:6px; } .chip { padding:6px 10px; border-radius:99px; border:1px solid var(--line); background:var(--panel2); cursor:pointer; user-select:none; }
+@media (max-width:680px) and (min-width:460px) { .chips-grid { grid-template-columns:repeat(3, 1fr); } }
 .sections { display:flex; flex-direction:column; gap:12px; } .section { display:flex; flex-direction:column; gap:6px; } .section + .section { border-top:1px solid var(--line); padding-top:12px; } .section-label { font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
 .chip.on { background:var(--primary-dark); border-color:var(--primary); } .chip.highlight { outline:2px solid var(--primary); outline-offset:-1px; }
 .chip small { margin-left:6px; padding:2px 6px; border-radius:4px; font-size:11px; }
 .chip small.elo-high { background:var(--primary); color:#000; } .chip small.elo-mid { background:var(--panel); color:#fff; } .chip small.elo-low { background:#e8eaf0; color:#1a1a1a; }
+.elo-legend { display:flex; flex-direction:column; gap:4px; }
+.elo-row { display:flex; align-items:center; gap:8px; font-size:13px; }
+.elo-swatch { width:14px; height:14px; border-radius:3px; flex-shrink:0; }
+.elo-swatch.elo-high { background:var(--primary); }
+.elo-swatch.elo-mid { background:var(--panel); border:1px solid var(--line); }
+.elo-swatch.elo-low { background:#e8eaf0; }
+.info-tooltip.elo-legend { top:100%; bottom:auto; margin-top:8px; margin-bottom:0; }
+.info-tooltip.elo-legend::after { top:auto; bottom:100%; border-top-color:transparent; border-bottom-color:var(--line); }
 .bar { height:8px; border-radius:4px; background:var(--panel2); overflow:hidden; } .bar > i { display:block; height:100%; background:var(--primary); }
 .stat { font-size:26px; font-weight:700; } .statlabel { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
 .heat td { text-align:center; padding:5px 6px; font-size:12px; } .heat th { font-size:11px; padding:4px 6px; }
