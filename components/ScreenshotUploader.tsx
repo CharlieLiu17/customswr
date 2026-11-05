@@ -44,12 +44,18 @@ const createEmptyPlayers = (): PlayerEntry[] => Array.from({ length: 10 }, (_, i
   matched: false,
 }));
 
-// Template size - inner square inscribed in circular portrait
+// Template size for comparison (templates were captured at this size)
 const TEMPLATE_SIZE = 27;
 
-// Fixed offset from OCR bbox to icon center
-const ICON_OFFSET_X = -45;
-const ICON_OFFSET_Y = -8;
+// Reference values calibrated at 1600x900 League client
+// These get scaled proportionally based on detected text height
+const REFERENCE_BBOX_HEIGHT: number = 13.7; // Calibrated at 1600x900 League client
+const REFERENCE_OFFSET_X = -45;
+const REFERENCE_OFFSET_Y = -8;
+const REFERENCE_ICON_SIZE = 27;
+
+// OCR confidence threshold (0-100)
+const MIN_OCR_CONFIDENCE = 75;
 
 // Crop ratio for center square
 const CROP_RATIO = 1 / Math.sqrt(2);
@@ -183,12 +189,13 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
     return () => clearTimeout(timer);
   }, [successMsg]);
 
-  // Find champion icon at fixed offset from name bbox
+  // Find champion icon at scaled offset from name bbox
   const findChampionAtPosition = async (
     ctx: CanvasRenderingContext2D,
     nameX: number,
     nameY: number,
-    playerName: string  // for debug saving
+    playerName: string,  // for debug saving
+    scale: number = 1    // scale factor based on bbox height vs reference
   ): Promise<{ id: string; name: string; mse: number } | null> => {
     const templateEntries = Object.entries(championTemplates);
 
@@ -199,17 +206,23 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
 
     let bestMatch: { id: string; name: string; mse: number } | null = null;
 
-    // Fixed position: exact offset from OCR bbox (no search - trust the offset)
-    const iconX = nameX + ICON_OFFSET_X;
-    const iconY = nameY + ICON_OFFSET_Y;
+    // Scale offsets and extraction size based on detected UI scale
+    const offsetX = REFERENCE_OFFSET_X * scale;
+    const offsetY = REFERENCE_OFFSET_Y * scale;
+    const extractSize = Math.round(REFERENCE_ICON_SIZE * scale);
+
+    const iconX = nameX + offsetX;
+    const iconY = nameY + offsetY;
 
     if (iconX < 0 || iconY < 0) return null;
 
     try {
-      // Extract 27x27 region directly (already the inner square size)
+      // Extract scaled region and resize to TEMPLATE_SIZE for comparison
+      smallCtx.imageSmoothingEnabled = true;
+      smallCtx.imageSmoothingQuality = 'high';
       smallCtx.drawImage(
         ctx.canvas,
-        iconX, iconY, TEMPLATE_SIZE, TEMPLATE_SIZE,
+        iconX, iconY, extractSize, extractSize,
         0, 0, TEMPLATE_SIZE, TEMPLATE_SIZE
       );
 
@@ -252,34 +265,77 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
         img.onerror = reject;
       });
 
-      // Draw to canvas
+      // Draw to canvas (original resolution for champion detection)
       const canvas = canvasRef.current!;
       const ctx = canvas.getContext('2d')!;
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
 
+      // For OCR: upscale low-res images to improve text recognition
+      // Target ~1920px width for consistent OCR quality
+      const MIN_OCR_WIDTH = 1600;
+      const ocrScale = img.width < MIN_OCR_WIDTH ? Math.min(3, MIN_OCR_WIDTH / img.width) : 1;
+
+      let ocrCanvas: HTMLCanvasElement;
+      if (ocrScale > 1) {
+        console.log(`Upscaling image ${ocrScale.toFixed(2)}x for OCR (${img.width} -> ${Math.round(img.width * ocrScale)})`);
+        ocrCanvas = document.createElement('canvas');
+        ocrCanvas.width = Math.round(img.width * ocrScale);
+        ocrCanvas.height = Math.round(img.height * ocrScale);
+        const ocrCtx = ocrCanvas.getContext('2d')!;
+        ocrCtx.imageSmoothingEnabled = true;
+        ocrCtx.imageSmoothingQuality = 'high';
+        ocrCtx.drawImage(img, 0, 0, ocrCanvas.width, ocrCanvas.height);
+      } else {
+        ocrCanvas = canvas;
+      }
+
       // Run OCR with bounding boxes
       setStatus('Running OCR...');
       const worker = await createWorker('eng');
-      const { data } = await worker.recognize(img, {}, { blocks: true });
+      const { data } = await worker.recognize(ocrCanvas, {}, { blocks: true });
       await worker.terminate();
 
-      // Extract words with bounding boxes
-      const words: Array<{ text: string; bbox: { x0: number; y0: number; x1: number; y1: number } }> = [];
+      // Extract words with bounding boxes (scale back to original coordinates if upscaled)
+      const allWords: Array<{ text: string; confidence: number; bbox: { x0: number; y0: number; x1: number; y1: number } }> = [];
       for (const block of data.blocks || []) {
         for (const para of block.paragraphs || []) {
           for (const line of para.lines || []) {
             for (const word of line.words || []) {
-              words.push(word);
+              allWords.push({
+                text: word.text,
+                confidence: word.confidence,
+                bbox: {
+                  x0: word.bbox.x0 / ocrScale,
+                  y0: word.bbox.y0 / ocrScale,
+                  x1: word.bbox.x1 / ocrScale,
+                  y1: word.bbox.y1 / ocrScale,
+                },
+              });
             }
           }
         }
       }
 
+      // Filter out low-confidence words
+      const words = allWords.filter(w => w.confidence >= MIN_OCR_CONFIDENCE);
+      console.log(`OCR: ${allWords.length} words total, ${words.length} above ${MIN_OCR_CONFIDENCE}% confidence`);
+
       // Fuzzy match for OCR errors - handles substitutions anywhere in string
       const fuzzyMatch = (ocrText: string, targetName: string): boolean => {
-        // Exact or substring match
+        // Exact match (case insensitive)
+        if (ocrText === targetName) return true;
+
+        // Special case: first and last letter match with similar length
+        if (ocrText.length >= 2 && targetName.length >= 2 &&
+            ocrText[0] === targetName[0] &&
+            ocrText[ocrText.length - 1] === targetName[targetName.length - 1] &&
+            Math.abs(ocrText.length - targetName.length) <= 1) {
+          return true;
+        }
+
+        // Substring match - one contains the other
         if (ocrText.includes(targetName) || targetName.includes(ocrText)) {
           return ocrText.length >= targetName.length * 0.4;
         }
@@ -296,12 +352,28 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
           if (ocrText[i] === targetName[i]) matches++;
         }
 
+        // For short names (<=4 chars), require most chars to match
+        if (targetName.length <= 4) {
+          const maxErrors = targetName.length <= 3 ? 0 : 1;
+          return minLen - matches <= maxErrors;
+        }
+
         // Allow up to 2 character errors for names >= 6 chars
         const maxErrors = ocrText.length >= 10 ? 3 : ocrText.length >= 6 ? 2 : 1;
         const errors = minLen - matches;
 
         return errors <= maxErrors && matches >= 4;
       };
+
+      // Log all OCR words for debugging (including confidence)
+      console.log('=== OCR Results ===');
+      for (const word of words) {
+        const text = word.text.replace(/[^a-zA-Z0-9]/g, '');
+        if (text.length >= 2) {
+          console.log(`OCR: "${word.text}" -> "${text}" (conf: ${word.confidence.toFixed(0)}%) at (${Math.round(word.bbox.x0)}, ${Math.round(word.bbox.y0)})`);
+        }
+      }
+      console.log('===================');
 
       // Match words to player names/IGNs
       interface DetectedPlayer {
@@ -343,6 +415,7 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
         }
 
         if (matchedPlayer) {
+          console.log(`MATCH: "${text}" -> "${matchedPlayer}"`);
           usedPlayerNames.add(matchedPlayer);
           detectedPlayers.push({
             playerName: matchedPlayer,
@@ -359,38 +432,80 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
         `${p.playerName} at (${p.bbox.x0}, ${p.bbox.y0}) size ${p.bbox.x1 - p.bbox.x0}x${p.bbox.y1 - p.bbox.y0}`
       ));
 
-      // Calculate median X and median Y spacing (excluding team gap between player 5 and 6)
+      // Handle case with no detected players
+      if (detectedPlayers.length === 0) {
+        console.log('No players detected');
+        setStatus('No players detected');
+        setProcessing(false);
+        return;
+      }
+
+      // Calculate median X
       const xValues = detectedPlayers.map(p => p.bbox.x0);
       const medianX = xValues.slice().sort((a, b) => a - b)[Math.floor(xValues.length / 2)];
 
-      const ySpacings: number[] = [];
+      // Find team gap dynamically (largest Y gap between consecutive players)
+      let teamGapIdx = -1;
+      let maxGap = 0;
+      const allYSpacings: number[] = [];
       for (let i = 1; i < detectedPlayers.length; i++) {
-        // Skip the team gap (between index 4 and 5, i.e., players 5 and 6)
-        if (i === 5) continue;
-        ySpacings.push(detectedPlayers[i].bbox.y0 - detectedPlayers[i - 1].bbox.y0);
+        const gap = detectedPlayers[i].bbox.y0 - detectedPlayers[i - 1].bbox.y0;
+        allYSpacings.push(gap);
+        if (gap > maxGap) {
+          maxGap = gap;
+          teamGapIdx = i;
+        }
       }
-      const medianYSpacing = ySpacings.slice().sort((a, b) => a - b)[Math.floor(ySpacings.length / 2)];
+
+      // Calculate median Y spacing excluding the team gap
+      const ySpacings = allYSpacings.filter((_, idx) => idx !== teamGapIdx - 1);
+      const medianYSpacing = ySpacings.length > 0
+        ? ySpacings.slice().sort((a, b) => a - b)[Math.floor(ySpacings.length / 2)]
+        : 0;
+
+      console.log(`Detected ${detectedPlayers.length} players, team gap at index ${teamGapIdx}`);
+
+      // Calculate median bbox height for scaling
+      const bboxHeights = detectedPlayers.map(p => p.bbox.y1 - p.bbox.y0).filter(h => h > 0);
+      const medianBboxHeight = bboxHeights.length > 0
+        ? bboxHeights.slice().sort((a, b) => a - b)[Math.floor(bboxHeights.length / 2)]
+        : REFERENCE_BBOX_HEIGHT;
+
+      // Calculate scale factor (1.0 = reference resolution)
+      const uiScale = REFERENCE_BBOX_HEIGHT > 0 && medianBboxHeight > 0
+        ? medianBboxHeight / REFERENCE_BBOX_HEIGHT
+        : 1;
 
       console.log(`Median X: ${medianX}, Median Y spacing: ${medianYSpacing}`);
+      console.log(`>>> MEDIAN BBOX HEIGHT: ${medianBboxHeight.toFixed(1)}px (UI scale: ${uiScale.toFixed(3)}x) <<<`);
+      if (REFERENCE_BBOX_HEIGHT === 0) {
+        console.log('>>> SET REFERENCE_BBOX_HEIGHT to the value above in ScreenshotUploader.tsx <<<');
+      }
 
-      // Identify misaligned players using median voting from all teammates
-      // For each player, calculate expected Y from every other teammate, take median
+      // Identify misaligned players using median voting from teammates
+      // Uses dynamic team gap detection instead of hardcoded index 5
       const getExpectedY = (playerIdx: number): number => {
-        const isTeam1 = playerIdx < 5;
-        const teamStart = isTeam1 ? 0 : 5;
-        const teamEnd = isTeam1 ? 4 : 9;
-        const teamBaseIdx = isTeam1 ? 0 : 5;
+        if (detectedPlayers.length < 2 || medianYSpacing === 0) {
+          return detectedPlayers[playerIdx]?.bbox.y0 ?? 0;
+        }
+
+        const isTeam1 = teamGapIdx > 0 ? playerIdx < teamGapIdx : playerIdx < detectedPlayers.length / 2;
+        const teamStart = isTeam1 ? 0 : teamGapIdx;
+        const teamEnd = isTeam1 ? teamGapIdx - 1 : detectedPlayers.length - 1;
+        const teamBaseIdx = teamStart;
 
         const expectedValues: number[] = [];
-        for (let j = teamStart; j <= teamEnd; j++) {
+        for (let j = teamStart; j <= teamEnd && j < detectedPlayers.length; j++) {
           if (j === playerIdx) continue;
-          // Expected Y for playerIdx based on player j's position
           const relativeIdx = (playerIdx - teamBaseIdx) - (j - teamBaseIdx);
           const expectedFromJ = detectedPlayers[j].bbox.y0 + relativeIdx * medianYSpacing;
           expectedValues.push(expectedFromJ);
         }
 
-        // Return median of expected values
+        if (expectedValues.length === 0) {
+          return detectedPlayers[playerIdx]?.bbox.y0 ?? 0;
+        }
+
         expectedValues.sort((a, b) => a - b);
         return expectedValues[Math.floor(expectedValues.length / 2)];
       };
@@ -420,13 +535,13 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
         (player as any).correctedY = correctedY;
       }
 
-      // Find champions at fixed offset from each detected name
+      // Find champions at scaled offset from each detected name
       setStatus('Detecting champions...');
       for (const player of detectedPlayers) {
         const x0 = (player as any).correctedX ?? player.bbox.x0;
         const y0 = (player as any).correctedY ?? player.bbox.y0;
 
-        const champMatch = await findChampionAtPosition(ctx, x0, y0, player.playerName);
+        const champMatch = await findChampionAtPosition(ctx, x0, y0, player.playerName, uiScale);
         if (champMatch) {
           const champData = championList.find(c => c.id === champMatch.id);
           player.champion = champData?.name || champMatch.name;
@@ -434,19 +549,30 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
         }
       }
 
-      // Sort by Y coordinate and assign to teams
+      // Sort by Y coordinate and assign to teams using detected gap
       detectedPlayers.sort((a, b) => a.bbox.y0 - b.bbox.y0);
 
+      // Use teamGapIdx to split teams (fallback to half if no clear gap)
+      const splitIdx = teamGapIdx > 0 ? teamGapIdx : Math.ceil(detectedPlayers.length / 2);
+      const team1 = detectedPlayers.slice(0, splitIdx);
+      const team2 = detectedPlayers.slice(splitIdx);
+
+      console.log(`Team split at index ${splitIdx}: Team1=${team1.length}, Team2=${team2.length}`);
+
       const newPlayers = createEmptyPlayers();
-      detectedPlayers.slice(0, 5).forEach((p, i) => {
-        newPlayers[i].name = p.playerName;
-        newPlayers[i].champion = p.champion || '';
-        newPlayers[i].matched = true;
+      team1.forEach((p, i) => {
+        if (i < 5) {
+          newPlayers[i].name = p.playerName;
+          newPlayers[i].champion = p.champion || '';
+          newPlayers[i].matched = true;
+        }
       });
-      detectedPlayers.slice(5, 10).forEach((p, i) => {
-        newPlayers[5 + i].name = p.playerName;
-        newPlayers[5 + i].champion = p.champion || '';
-        newPlayers[5 + i].matched = true;
+      team2.forEach((p, i) => {
+        if (i < 5) {
+          newPlayers[5 + i].name = p.playerName;
+          newPlayers[5 + i].champion = p.champion || '';
+          newPlayers[5 + i].matched = true;
+        }
       });
 
       // Auto-assign roles based on champions
