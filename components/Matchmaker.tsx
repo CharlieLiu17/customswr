@@ -88,6 +88,32 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     setInlineGrabbed(null);
   }
 
+  // Load from sessionStorage on mount (if no URL params)
+  useEffect(() => {
+    if (initialSelection.length > 0) return; // URL params take priority
+    try {
+      const saved = sessionStorage.getItem('matchmaking-state');
+      if (saved) {
+        const { selection, results, pickIndex } = JSON.parse(saved);
+        if (selection?.length) setSel(selection);
+        if (results) setRes(results);
+        if (typeof pickIndex === 'number') setPick(pickIndex);
+      }
+    } catch {}
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save to sessionStorage when state changes
+  useEffect(() => {
+    if (sel.length === 0 && !res) return; // Don't save empty state
+    try {
+      sessionStorage.setItem('matchmaking-state', JSON.stringify({
+        selection: sel,
+        results: res,
+        pickIndex: pick,
+      }));
+    } catch {}
+  }, [sel, res, pick]);
+
   // Auto-generate if loaded with 10 players from URL
   useEffect(() => {
     if (initialSelection.length === 10 && !res) generate(false);
@@ -156,7 +182,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     const r = await fetch('/api/matches', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setErr(j.error); return; }
-    setModalOpen(false); setOk({ msg: `Saved — Team ${winner + 1} won. MMRs updated.`, gameId: j.id }); setRes(null); router.refresh();
+    setModalOpen(false); setOk({ msg: `Saved — Team ${winner + 1} won. MMRs updated.`, gameId: j.id }); setRes(null); setSel([]); try { sessionStorage.removeItem('matchmaking-state'); } catch {} router.refresh();
   }
 
   function copyLink() {
