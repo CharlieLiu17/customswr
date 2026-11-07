@@ -54,6 +54,7 @@ export default function ImportTutorialModal() {
               <li>Make sure player names are visible in the screenshot</li>
               <li>Add player IGNs in the Admin panel for better matching</li>
               <li>You can manually correct any detection errors before submitting</li>
+              <li><strong>Best results with 1920x1080 or 1600x900 client resolution</strong></li>
             </ul>
           </div>
         </div>

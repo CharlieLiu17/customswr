@@ -47,9 +47,11 @@ const createEmptyPlayers = (): PlayerEntry[] => Array.from({ length: 10 }, (_, i
 // Template size for comparison (templates were captured at this size)
 const TEMPLATE_SIZE = 27;
 
-// Fixed offset from OCR bbox to icon center
-const ICON_OFFSET_X = -45;
-const ICON_OFFSET_Y = -8;
+// Reference values calibrated at 1600x900 League client
+const REFERENCE_BBOX_HEIGHT = 13.7;
+const REFERENCE_OFFSET_X = -45;
+const REFERENCE_OFFSET_Y = -8;
+const REFERENCE_ICON_SIZE = 27;
 
 // Crop ratio for center square
 const CROP_RATIO = 1 / Math.sqrt(2);
@@ -183,12 +185,13 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
     return () => clearTimeout(timer);
   }, [successMsg]);
 
-  // Find champion icon at fixed offset from name bbox
+  // Find champion icon at scaled offset from name bbox
   const findChampionAtPosition = async (
     ctx: CanvasRenderingContext2D,
     nameX: number,
     nameY: number,
-    playerName: string  // for debug saving
+    playerName: string,  // for debug saving
+    scale: number = 1    // scale factor based on bbox height vs reference
   ): Promise<{ id: string; name: string; mse: number } | null> => {
     const templateEntries = Object.entries(championTemplates);
 
@@ -199,17 +202,23 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
 
     let bestMatch: { id: string; name: string; mse: number } | null = null;
 
-    // Fixed position: exact offset from OCR bbox
-    const iconX = nameX + ICON_OFFSET_X;
-    const iconY = nameY + ICON_OFFSET_Y;
+    // Scale offsets and extraction size based on detected UI scale
+    const offsetX = REFERENCE_OFFSET_X * scale;
+    const offsetY = REFERENCE_OFFSET_Y * scale;
+    const extractSize = Math.round(REFERENCE_ICON_SIZE * scale);
+
+    const iconX = nameX + offsetX;
+    const iconY = nameY + offsetY;
 
     if (iconX < 0 || iconY < 0) return null;
 
     try {
-      // Extract 27x27 region directly
+      // Extract scaled region and resize to TEMPLATE_SIZE for comparison
+      smallCtx.imageSmoothingEnabled = true;
+      smallCtx.imageSmoothingQuality = 'high';
       smallCtx.drawImage(
         ctx.canvas,
-        iconX, iconY, TEMPLATE_SIZE, TEMPLATE_SIZE,
+        iconX, iconY, extractSize, extractSize,
         0, 0, TEMPLATE_SIZE, TEMPLATE_SIZE
       );
 
@@ -396,7 +405,15 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
         ? ySpacings.slice().sort((a, b) => a - b)[Math.floor(ySpacings.length / 2)]
         : 0;
 
+      // Calculate median bbox height for scaling offsets
+      const bboxHeights = detectedPlayers.map(p => p.bbox.y1 - p.bbox.y0).filter(h => h > 0);
+      const medianBboxHeight = bboxHeights.length > 0
+        ? bboxHeights.slice().sort((a, b) => a - b)[Math.floor(bboxHeights.length / 2)]
+        : REFERENCE_BBOX_HEIGHT;
+      const uiScale = medianBboxHeight / REFERENCE_BBOX_HEIGHT;
+
       console.log(`Median X: ${medianX}, Median Y spacing: ${medianYSpacing}`);
+      console.log(`Median bbox height: ${medianBboxHeight.toFixed(1)}px, UI scale: ${uiScale.toFixed(3)}x`);
 
       // Identify misaligned players using median voting from all teammates
       const getExpectedY = (playerIdx: number): number => {
@@ -452,7 +469,7 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
         const x0 = (player as any).correctedX ?? player.bbox.x0;
         const y0 = (player as any).correctedY ?? player.bbox.y0;
 
-        const champMatch = await findChampionAtPosition(ctx, x0, y0, player.playerName);
+        const champMatch = await findChampionAtPosition(ctx, x0, y0, player.playerName, uiScale);
         if (champMatch) {
           const champData = championList.find(c => c.id === champMatch.id);
           player.champion = champData?.name || champMatch.name;
@@ -681,6 +698,10 @@ export default function ScreenshotUploader({ knownPlayers, ignMap, championRoles
           </div>
         )}
       </div>
+
+      <p className="muted small" style={{ marginTop: 8, marginBottom: 8 }}>
+        <strong>Note:</strong> Best results with 1920x1080 or 1600x900 client resolution
+      </p>
 
       {image && (
         <div className="row">
