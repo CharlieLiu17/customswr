@@ -324,7 +324,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
           <div className="side-pick-banner">{(() => {
             const totalA = swappedTeams?.a ? swappedTeams.a.reduce((sum, p) => sum + p.mmr, 0) : o.a.total;
             const totalB = swappedTeams?.b ? swappedTeams.b.reduce((sum, p) => sum + p.mmr, 0) : o.b.total;
-            const delta = Math.abs(totalA - totalB);
+            const delta = Math.abs(totalA - totalB) / 5; // per-player average gap
             const lowerTeam = totalA < totalB ? '1' : '2';
             return <>Delta is <b>{Math.round(delta)}</b>. Team {lowerTeam} is lower, so <b>Team {lowerTeam}</b> gets to choose side.</>;
           })()}</div>

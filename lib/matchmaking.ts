@@ -81,7 +81,7 @@ export function findSplits(players: MMPlayer[], duos: [string, string][] = []): 
     const ra = assignRoles(a); if (!ra) continue;
     const rb = assignRoles(b); if (!rb) continue;
     const pa = plan(a, ra), pb = plan(b, rb);
-    out.push({ a: pa, b: pb, delta: Math.abs(pa.total - pb.total) / 5 });
+    out.push({ a: pa, b: pb, delta: Math.abs(pa.total - pb.total) });
   }
   return out.sort((x, y) => x.delta - y.delta);
 }
