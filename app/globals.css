@@ -148,3 +148,14 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:-1p
 .tutorial-tips ul { margin:8px 0 0; padding-left:20px; }
 .tutorial-tips li { color:var(--muted); }
 .modal-actions { display:flex; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid var(--line); }
+/* Duo queue */
+:root { --duo0:#a78bfa; --duo0-dark:#3b2a6b; --duo1:#f5b942; --duo1-dark:#5c4310; }
+.chip.duo-0 { background:var(--duo0-dark); border-color:var(--duo0); } .chip.duo-1 { background:var(--duo1-dark); border-color:var(--duo1); }
+.chip.duo-pending { border-style:dashed; }
+.duo-btn { display:flex; align-items:center; gap:2px; padding:6px 10px; } .duo-btn.on { border-color:var(--duo0); color:var(--duo0); }
+.duo-row { gap:8px; flex-wrap:wrap; }
+.duo-tag { display:inline-flex; align-items:center; gap:6px; padding:4px 6px 4px 10px; border-radius:99px; border:1px solid; font-size:13px; }
+.duo-tag.duo-0 { border-color:var(--duo0); background:var(--duo0-dark); } .duo-tag.duo-1 { border-color:var(--duo1); background:var(--duo1-dark); }
+.duo-tag button { padding:0 2px; background:none; border:none; display:flex; align-items:center; color:inherit; cursor:pointer; }
+.duo-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-left:6px; vertical-align:middle; }
+.duo-dot.duo-0 { background:var(--duo0); } .duo-dot.duo-1 { background:var(--duo1); }

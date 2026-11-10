@@ -7,14 +7,21 @@ import Matchmaker from '@/components/Matchmaker';
 
 export const dynamic = 'force-dynamic';
 
-function parseParams(sp: { p?: string; m?: string; d?: string }, playerNames: string[]): { names: string[]; pick: number } {
+function parseParams(sp: { p?: string; m?: string; d?: string }, playerNames: string[]): { names: string[]; pick: number; duos: [string, string][] } {
   if (sp.d) {
     const SHIFT = 7;
-    if (sp.d.length === 11) {
-      const indices = sp.d.slice(0, 10).split('').map((c) => (c.charCodeAt(0) - 65 - SHIFT + 62) % 62);
-      const pick = (sp.d.charCodeAt(10) - 65 - SHIFT + 62) % 62;
+    // 10 player chars + 1 pick char, then optionally 2 chars per duo (max 2 duos)
+    if (sp.d.length >= 11 && sp.d.length <= 15 && (sp.d.length - 11) % 2 === 0) {
+      const dec = (c: string) => (c.charCodeAt(0) - 65 - SHIFT + 62) % 62;
+      const indices = sp.d.slice(0, 10).split('').map(dec);
+      const pick = dec(sp.d[10]);
       const names = indices.map((i) => playerNames[i]).filter(Boolean);
-      return { names, pick };
+      const duos: [string, string][] = [];
+      for (let k = 11; k < sp.d.length; k += 2) {
+        const x = playerNames[dec(sp.d[k])], y = playerNames[dec(sp.d[k + 1])];
+        if (x && y && names.includes(x) && names.includes(y)) duos.push([x, y]);
+      }
+      return { names, pick, duos };
     }
     // Legacy dot-separated format
     const parts = sp.d.split('.');
@@ -22,10 +29,10 @@ function parseParams(sp: { p?: string; m?: string; d?: string }, playerNames: st
       const indices = parts.slice(0, 10).map(Number);
       const pick = parseInt(parts[10], 10) || 0;
       const names = indices.map((i) => playerNames[i]).filter(Boolean);
-      return { names, pick };
+      return { names, pick, duos: [] };
     }
   }
-  return { names: sp.p ? sp.p.split(',') : [], pick: sp.m ? parseInt(sp.m, 10) : 0 };
+  return { names: sp.p ? sp.p.split(',') : [], pick: sp.m ? parseInt(sp.m, 10) : 0, duos: [] };
 }
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ p?: string; m?: string; d?: string }> }): Promise<Metadata> {
@@ -34,7 +41,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   try {
     const { players, lines } = await load();
     const playerNames = players.map((p) => p.name);
-    const { names, pick: metaPick } = parseParams(sp, playerNames);
+    const { names, pick: metaPick, duos: metaDuos } = parseParams(sp, playerNames);
     if (names.length !== 10) return { title: 'Matchmaking' };
     const byName = new Map(players.map((p) => [p.name, p]));
     const counts = new Map<string, Partial<Record<Role, number>>>();
@@ -49,7 +56,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
     if (pool.length !== 10) return { title: 'Matchmaking' };
 
-    const splits = findSplits(pool);
+    const splits = findSplits(pool, metaDuos);
     if (!splits.length) return { title: 'Matchmaking' };
 
     const o = splits[Math.min(metaPick, splits.length - 1)];
@@ -88,9 +95,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
     last10.set(name, { w, l: recent.length - w });
   }
   const playerNames = players.map((p) => p.name);
-  const { names, pick } = parseParams(sp, playerNames);
+  const { names, pick, duos } = parseParams(sp, playerNames);
   const initialPlayers = names.filter((n) => players.some((p) => p.name === n));
   const initialPick = pick;
   return (<><h1>Matchmaking</h1>
-    <Matchmaker admin={await isAdmin()} players={players.map((p) => ({ name: p.name, mmr: p.mmr, active: p.active, games: games.get(p.name) ?? 0, recentGames: recentGames.get(p.name) ?? 0, last10: last10.get(p.name) ?? { w: 0, l: 0 } }))} initialSelection={initialPlayers} initialPick={initialPick} /></>);
+    <Matchmaker admin={await isAdmin()} players={players.map((p) => ({ name: p.name, mmr: p.mmr, active: p.active, games: games.get(p.name) ?? 0, recentGames: recentGames.get(p.name) ?? 0, last10: last10.get(p.name) ?? { w: 0, l: 0 } }))} initialSelection={initialPlayers} initialPick={initialPick} initialDuos={duos} /></>);
 }

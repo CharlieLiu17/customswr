@@ -50,4 +50,24 @@ describe('findSplits', () => {
     for (let i = 1; i < res.length; i++) expect(res[i].delta).toBeGreaterThanOrEqual(res[i - 1].delta);
     expect(() => findSplits(pool.slice(0, 9))).toThrow();
   });
+  it('keeps duos on the same team and still returns the best remaining split', () => {
+    const r = rng(99);
+    for (let t = 0; t < 30; t++) {
+      const pool = randomPool(r).map((p) => ({ ...p, playable: [...ROLES], oneTrick: null }));
+      const duos: [string, string][] = [['P1', 'P6'], ['P3', 'P0']];
+      const res = findSplits(pool, duos);
+      expect(res.length).toBeGreaterThan(0);
+      for (const s of res) {
+        const a = new Set(s.a.players.map((p) => p.name));
+        for (const [x, y] of duos) expect(a.has(x)).toBe(a.has(y));
+      }
+      const unconstrained = findSplits(pool).filter((s) => { const a = new Set(s.a.players.map((p) => p.name)); return duos.every(([x, y]) => a.has(x) === a.has(y)); });
+      expect(res[0].delta).toBe(unconstrained[0].delta);
+    }
+  });
+  it('rejects invalid duos', () => {
+    const pool = randomPool(rng(3));
+    expect(() => findSplits(pool, [['P1', 'Nobody']])).toThrow();
+    expect(() => findSplits(pool, [['P1', 'P2'], ['P2', 'P3']])).toThrow();
+  });
 });

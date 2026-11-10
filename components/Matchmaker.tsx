@@ -9,16 +9,23 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SettingsIcon from '@mui/icons-material/Settings';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 
 interface P { name: string; mmr: number; active: boolean; games: number; recentGames: number; last10: { w: number; l: number } }
 interface Side { players: { name: string; mmr: number; role: Role }[]; total: number; synergy: number | null; against: number | null; estimate: number | null }
 interface Option { delta: number; a: Side; b: Side }
 const pct = (x: number | null) => (x === null ? '—' : (x * 100).toFixed(1) + '%');
 const eloTier = (mmr: number) => mmr >= 1400 ? 'elo-high' : mmr >= 1100 ? 'elo-mid' : 'elo-low';
+const MAX_DUOS = 2;
+type Duo = [string, string];
 
-export default function Matchmaker({ players, admin, initialSelection = [], initialPick = 0 }: { players: P[]; admin: boolean; initialSelection?: string[]; initialPick?: number }) {
+export default function Matchmaker({ players, admin, initialSelection = [], initialPick = 0, initialDuos = [] }: { players: P[]; admin: boolean; initialSelection?: string[]; initialPick?: number; initialDuos?: Duo[] }) {
   const router = useRouter();
   const [sel, setSel] = useState<string[]>(initialSelection);
+  const [duos, setDuos] = useState<Duo[]>(initialDuos);
+  const [duoMode, setDuoMode] = useState(false);
+  const [pendingDuo, setPendingDuo] = useState<string | null>(null);
   const [copied, setCopied] = useState<'link' | 'image' | null>(null);
   const captureRef = useRef<HTMLDivElement>(null);
   const [q, setQ] = useState('');
@@ -65,7 +72,30 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     return { regulars, newPlayers, others };
   }, [players, filtered]);
   const shown = useMemo(() => [...sections.regulars, ...sections.newPlayers, ...sections.others], [sections]);
-  const toggle = (n: string) => { setRes(null); setOk(null); setSel((s) => (s.includes(n) ? s.filter((x) => x !== n) : s.length < 10 ? [...s, n] : s)); };
+  const duoOf = (n: string) => duos.findIndex((d) => d.includes(n));
+  const toggle = (n: string) => {
+    setRes(null); setOk(null);
+    if (sel.includes(n)) { setDuos((ds) => ds.filter((d) => !d.includes(n))); if (pendingDuo === n) setPendingDuo(null); }
+    setSel((s) => (s.includes(n) ? s.filter((x) => x !== n) : s.length < 10 ? [...s, n] : s));
+  };
+  // In duo mode, clicking chips builds a pair (selecting them if needed) instead of toggling selection.
+  const pickDuo = (n: string) => {
+    if (duoOf(n) !== -1) return;
+    if (n === pendingDuo) { setPendingDuo(null); return; }
+    if (!sel.includes(n)) { if (sel.length >= 10) return; setSel((s) => [...s, n]); }
+    setRes(null); setOk(null);
+    if (!pendingDuo) { setPendingDuo(n); return; }
+    setDuos((ds) => [...ds, [pendingDuo, n]]);
+    setPendingDuo(null); setDuoMode(false);
+  };
+  const onChip = (n: string) => (duoMode ? pickDuo(n) : toggle(n));
+  const removeDuo = (i: number) => { setRes(null); setDuos((ds) => ds.filter((_, j) => j !== i)); };
+  const toggleDuoMode = () => { if (!duoMode && duos.length >= MAX_DUOS) return; setDuoMode(!duoMode); setPendingDuo(null); };
+  const chipCls = (n: string) => {
+    const d = duoOf(n);
+    return d !== -1 ? `on duo-${d}` : n === pendingDuo ? `on duo-${duos.length} duo-pending` : sel.includes(n) ? 'on' : '';
+  };
+  const chip = (p: P, extra = '') => <span key={p.name} className={`chip ${chipCls(p.name)} ${extra}`} onClick={() => onChip(p.name)}>{p.name}<small className={eloTier(p.mmr)}>{Math.round(p.mmr)}</small></span>;
   const selectPick = (i: number) => { if (i === pick) return; setSlideDir(i > pick ? 'right' : 'left'); setPick(i); setAnimKey((k) => k + 1); setSwapMode(false); setSwappedTeams(null); setSwappedStats(null); setInlineGrabbed(null); };
 
   async function recalcStats(teams: { a: Side['players']; b: Side['players'] }) {
@@ -94,8 +124,9 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     try {
       const saved = sessionStorage.getItem('matchmaking-state');
       if (saved) {
-        const { selection, results, pickIndex } = JSON.parse(saved);
+        const { selection, results, pickIndex, duos: savedDuos } = JSON.parse(saved);
         if (selection?.length) setSel(selection);
+        if (Array.isArray(savedDuos)) setDuos(savedDuos);
         if (results) setRes(results);
         if (typeof pickIndex === 'number') setPick(pickIndex);
       }
@@ -110,9 +141,10 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
         selection: sel,
         results: res,
         pickIndex: pick,
+        duos,
       }));
     } catch {}
-  }, [sel, res, pick]);
+  }, [sel, res, pick, duos]);
 
   // Auto-generate if loaded with 10 players from URL
   useEffect(() => {
@@ -121,7 +153,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
 
   async function generate(resetPick = true) {
     setBusy(true); setErr(''); setOk(null);
-    const r = await fetch('/api/matchmake', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ players: sel }) });
+    const r = await fetch('/api/matchmake', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ players: sel, duos }) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setErr(j.error); setRes(null); return; }
     setRes(j); if (resetPick) setPick(0);
@@ -182,13 +214,15 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     const r = await fetch('/api/matches', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setErr(j.error); return; }
-    setModalOpen(false); setOk({ msg: `Saved — Team ${winner + 1} won. MMRs updated.`, gameId: j.id }); setRes(null); setSel([]); try { sessionStorage.removeItem('matchmaking-state'); } catch {} router.refresh();
+    setModalOpen(false); setOk({ msg: `Saved — Team ${winner + 1} won. MMRs updated.`, gameId: j.id }); setRes(null); setSel([]); setDuos([]); try { sessionStorage.removeItem('matchmaking-state'); } catch {} router.refresh();
   }
 
   function copyLink() {
     const SHIFT = 7;
     const indices = sel.map((n) => players.findIndex((p) => p.name === n));
-    const encoded = indices.map((i) => String.fromCharCode(65 + ((i + SHIFT) % 62))).join('') + String.fromCharCode(65 + ((pick + SHIFT) % 62));
+    const enc = (i: number) => String.fromCharCode(65 + ((i + SHIFT) % 62));
+    const duoChars = duos.flat().map((n) => enc(players.findIndex((p) => p.name === n))).join('');
+    const encoded = indices.map(enc).join('') + enc(pick) + duoChars;
     const url = `${window.location.origin}/matchmaking?d=${encoded}`;
     navigator.clipboard.writeText(url);
     setCopied('link'); setTimeout(() => setCopied(null), 2000);
@@ -231,7 +265,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
           return (
             <tr key={p.name}>
               <td>{ROLE_EMOJI[p.role]} <span className="muted small">{p.role}</span></td>
-              <td><span className="player-hover"><a href={`/players/${encodeURIComponent(p.name)}`} target="_blank" rel="noopener noreferrer">{p.name}</a>{pl && <span className="player-tooltip"><RingChart w={pl.last10.w} l={pl.last10.l} /><span className="muted small">Last 10</span></span>}</span></td>
+              <td><span className="player-hover"><a href={`/players/${encodeURIComponent(p.name)}`} target="_blank" rel="noopener noreferrer">{p.name}</a>{duoOf(p.name) !== -1 && <span className={`duo-dot duo-${duoOf(p.name)}`} title={`Duo ${duoOf(p.name) + 1}`} />}{pl && <span className="player-tooltip"><RingChart w={pl.last10.w} l={pl.last10.l} /><span className="muted small">Last 10</span></span>}</span></td>
               <td className="num">{Math.round(p.mmr)}</td>
               {swapMode && <td><button className={`grab ${inlineGrabbed?.team === teamIdx && inlineGrabbed?.idx === i ? 'on' : ''}`} onClick={() => handleInlineGrab(teamIdx, i)}>⇅</button></td>}
             </tr>
@@ -245,7 +279,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   return (
     <div className="col">
       {ok && <div className="success-banner">{ok.msg} <a href={`/games/${ok.gameId}/edit`}>Go to Game</a></div>}
-      <div className="row"><span className="input-hint"><input placeholder="Search players…" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { if (sel.length === 10 && !busy) { generate(); } else if (q && shown.length > 0) { toggle(shown[0].name); setQ(''); } } }} /><kbd>⏎</kbd></span>
+      <div className="row"><span className="input-hint"><input placeholder="Search players…" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { if (sel.length === 10 && !busy) { generate(); } else if (q && shown.length > 0) { onChip(shown[0].name); setQ(''); } } }} /><kbd>⏎</kbd></span>
         <div ref={settingsRef} style={{ position: 'relative' }}>
           <button onClick={() => setSettingsOpen(!settingsOpen)} style={{ padding: '6px 10px', display: 'flex', alignItems: 'center' }}><SettingsIcon style={{ fontSize: 18 }} /></button>
           {settingsOpen && <div className="settings-popup">
@@ -260,14 +294,18 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
             <span className="elo-row"><span className="elo-swatch elo-low" />Below 1100</span>
           </span>
         </span>
-        <span style={{ flex: 1 }} /><span style={{ fontSize: 20 }}><b style={{ color: sel.length === 10 ? 'var(--text)' : 'var(--muted)' }}>{sel.length}</b> / 10</span><span style={{ flex: 1 }} /><button className="clear-btn" onClick={() => { setSel([]); setRes(null); }}>Clear</button></div>
+        <span style={{ flex: 1 }} /><span style={{ fontSize: 20 }}><b style={{ color: sel.length === 10 ? 'var(--text)' : 'var(--muted)' }}>{sel.length}</b> / 10</span><span style={{ flex: 1 }} /><button className={`duo-btn ${duoMode ? 'on' : ''}`} disabled={!duoMode && duos.length >= MAX_DUOS} onClick={toggleDuoMode} title={duos.length >= MAX_DUOS ? `Max ${MAX_DUOS} duos` : 'Add duo'}><AddIcon style={{ fontSize: 18 }} />Duo</button><button className="clear-btn" onClick={() => { setSel([]); setRes(null); setDuos([]); setDuoMode(false); setPendingDuo(null); }}>Clear</button></div>
+      {(duos.length > 0 || duoMode) && <div className="row duo-row">
+        {duos.map((d, i) => <span key={i} className={`duo-tag duo-${i}`}>Duo {i + 1}: {d[0]} + {d[1]}<button onClick={() => removeDuo(i)} title="Remove duo"><CloseIcon style={{ fontSize: 14 }} /></button></span>)}
+        {duoMode && <span className="muted small">{pendingDuo ? `Pick ${pendingDuo}'s duo partner…` : `Pick two players for Duo ${duos.length + 1}…`}</span>}
+      </div>}
       {q ? (
-        <div className="chips">{shown.map((p, i) => <span key={p.name} className={`chip ${sel.includes(p.name) ? 'on' : ''} ${i === 0 ? 'highlight' : ''}`} onClick={() => toggle(p.name)}>{p.name}<small className={eloTier(p.mmr)}>{Math.round(p.mmr)}</small></span>)}</div>
+        <div className="chips">{shown.map((p, i) => chip(p, i === 0 ? 'highlight' : ''))}</div>
       ) : (
         <div className="sections">
-          {sections.regulars.length > 0 && <div className="section"><span className="section-label">Regulars (Most played in last 30 games)</span><div className="chips chips-grid">{sections.regulars.map((p) => <span key={p.name} className={`chip ${sel.includes(p.name) ? 'on' : ''}`} onClick={() => toggle(p.name)}>{p.name}<small className={eloTier(p.mmr)}>{Math.round(p.mmr)}</small></span>)}</div></div>}
-          {sections.newPlayers.length > 0 && <div className="section"><span className="section-label">New</span><div className="chips">{sections.newPlayers.map((p) => <span key={p.name} className={`chip ${sel.includes(p.name) ? 'on' : ''}`} onClick={() => toggle(p.name)}>{p.name}<small className={eloTier(p.mmr)}>{Math.round(p.mmr)}</small></span>)}</div></div>}
-          {sections.others.length > 0 && <div className="section"><div className="chips">{sections.others.map((p) => <span key={p.name} className={`chip ${sel.includes(p.name) ? 'on' : ''}`} onClick={() => toggle(p.name)}>{p.name}<small className={eloTier(p.mmr)}>{Math.round(p.mmr)}</small></span>)}</div></div>}
+          {sections.regulars.length > 0 && <div className="section"><span className="section-label">Regulars (Most played in last 30 games)</span><div className="chips chips-grid">{sections.regulars.map((p) => chip(p))}</div></div>}
+          {sections.newPlayers.length > 0 && <div className="section"><span className="section-label">New</span><div className="chips">{sections.newPlayers.map((p) => chip(p))}</div></div>}
+          {sections.others.length > 0 && <div className="section"><div className="chips">{sections.others.map((p) => chip(p))}</div></div>}
         </div>
       )}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
