@@ -64,7 +64,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     const formatTeam = (team: typeof o.a, num: number) =>
       `Team ${num}: ` + team.players.map((p) => `${ROLE_EMOJI[p.role]} ${p.name}`).join(' · ');
 
-    const description = `${formatTeam(o.a, 1)}\n${formatTeam(o.b, 2)}\nDelta: ${Math.round(o.delta)}`;
+    const description = `${formatTeam(o.a, 1)}\n${formatTeam(o.b, 2)}\nDelta: ${Math.round(o.delta / 5)}`;
 
     return {
       title: 'Customs Match',
