@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import EditIcon from '@mui/icons-material/Edit';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import MatchForm, { type FormPlayer } from './MatchForm';
 import ScreenshotUploader from './ScreenshotUploader';
 import ImportTutorialModal from './ImportTutorialModal';
@@ -18,10 +19,11 @@ interface Props {
 
 export default function GameEntry({ admin, players, knownPlayers, ignMap, championRoles, championTemplates }: Props) {
   const [mode, setMode] = useState<'manual' | 'import'>('import');
+  const [tutorialOpen, setTutorialOpen] = useState(false);
 
   return (
     <>
-      {mode === 'import' && <ImportTutorialModal />}
+      {mode === 'import' && <ImportTutorialModal open={tutorialOpen} onClose={() => setTutorialOpen(false)} />}
       <div className="row" style={{ marginBottom: 16, gap: 0 }}>
         <button
           className={mode === 'manual' ? 'tab-btn active' : 'tab-btn'}
@@ -48,8 +50,11 @@ export default function GameEntry({ admin, players, knownPlayers, ignMap, champi
         </>
       ) : (
         <>
-          <p className="muted" style={{ marginBottom: 16 }}>
+          <p className="muted" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
             Upload or paste a post-game lobby screenshot. Player names and champions will be extracted automatically.
+            <button className="icon-btn" onClick={() => setTutorialOpen(true)} title="How to import" aria-label="Show import tutorial">
+              <InfoOutlinedIcon style={{ fontSize: 18 }} />
+            </button>
           </p>
           <ScreenshotUploader
             knownPlayers={knownPlayers}

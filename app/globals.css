@@ -159,3 +159,4 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:-1p
 .duo-tag button { padding:0 2px; background:none; border:none; display:flex; align-items:center; color:inherit; cursor:pointer; }
 .duo-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-left:6px; vertical-align:middle; }
 .duo-dot.duo-0 { background:var(--duo0); } .duo-dot.duo-1 { background:var(--duo1); }
+.icon-btn { display:inline-flex; align-items:center; padding:2px; background:none; border:none; color:var(--muted); cursor:pointer; } .icon-btn:hover { color:var(--text); }

@@ -4,21 +4,21 @@ import { useState, useEffect } from 'react';
 
 const STORAGE_KEY = 'import-tutorial-seen';
 
-export default function ImportTutorialModal() {
-  const [isOpen, setIsOpen] = useState(false);
+/** Opens automatically the first time; afterwards only when `open` is set (e.g. via the info icon). */
+export default function ImportTutorialModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [firstVisit, setFirstVisit] = useState(false);
 
   useEffect(() => {
-    const seen = localStorage.getItem(STORAGE_KEY);
-    if (!seen) {
-      setIsOpen(true);
-    }
+    if (!localStorage.getItem(STORAGE_KEY)) setFirstVisit(true);
   }, []);
 
   const handleClose = () => {
     localStorage.setItem(STORAGE_KEY, 'true');
-    setIsOpen(false);
+    setFirstVisit(false);
+    onClose();
   };
 
+  const isOpen = open || firstVisit;
   if (!isOpen) return null;
 
   return (
