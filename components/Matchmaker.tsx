@@ -17,15 +17,18 @@ interface Side { players: { name: string; mmr: number; role: Role }[]; total: nu
 interface Option { delta: number; a: Side; b: Side }
 const pct = (x: number | null) => (x === null ? '—' : (x * 100).toFixed(1) + '%');
 const eloTier = (mmr: number) => mmr >= 1400 ? 'elo-high' : mmr >= 1100 ? 'elo-mid' : 'elo-low';
-const MAX_DUOS = 2;
-type Duo = [string, string];
+const MAX_PAIRS = 2; // per kind: up to 2 duos and 2 rival pairs
+type Pair = [string, string];
+type PairKind = 'duo' | 'rival';
 
-export default function Matchmaker({ players, admin, initialSelection = [], initialPick = 0, initialDuos = [] }: { players: P[]; admin: boolean; initialSelection?: string[]; initialPick?: number; initialDuos?: Duo[] }) {
+export default function Matchmaker({ players, admin, initialSelection = [], initialPick = 0, initialDuos = [], initialRivals = [] }: { players: P[]; admin: boolean; initialSelection?: string[]; initialPick?: number; initialDuos?: Pair[]; initialRivals?: Pair[] }) {
   const router = useRouter();
   const [sel, setSel] = useState<string[]>(initialSelection);
-  const [duos, setDuos] = useState<Duo[]>(initialDuos);
-  const [duoMode, setDuoMode] = useState(false);
-  const [pendingDuo, setPendingDuo] = useState<string | null>(null);
+  const [duos, setDuos] = useState<Pair[]>(initialDuos);
+  const [rivals, setRivals] = useState<Pair[]>(initialRivals);
+  // which kind of pair the next two chip clicks will form, and the first player picked so far
+  const [pairMode, setPairMode] = useState<PairKind | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
   const [copied, setCopied] = useState<'link' | 'image' | null>(null);
   const captureRef = useRef<HTMLDivElement>(null);
   const [q, setQ] = useState('');
@@ -73,29 +76,47 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
   }, [players, filtered]);
   const shown = useMemo(() => [...sections.regulars, ...sections.newPlayers, ...sections.others], [sections]);
   const duoOf = (n: string) => duos.findIndex((d) => d.includes(n));
+  const rivalOf = (n: string) => rivals.findIndex((d) => d.includes(n));
+  const pairsOf = (k: PairKind) => (k === 'duo' ? duos : rivals);
+  const setPairsOf = (k: PairKind) => (k === 'duo' ? setDuos : setRivals);
   const toggle = (n: string) => {
     setRes(null); setOk(null);
-    if (sel.includes(n)) { setDuos((ds) => ds.filter((d) => !d.includes(n))); if (pendingDuo === n) setPendingDuo(null); }
+    if (sel.includes(n)) {
+      setDuos((ds) => ds.filter((d) => !d.includes(n))); setRivals((rs) => rs.filter((d) => !d.includes(n)));
+      if (pending === n) setPending(null);
+    }
     setSel((s) => (s.includes(n) ? s.filter((x) => x !== n) : s.length < 10 ? [...s, n] : s));
   };
-  // In duo mode, clicking chips builds a pair (selecting them if needed) instead of toggling selection.
-  const pickDuo = (n: string) => {
-    if (duoOf(n) !== -1) return;
-    if (n === pendingDuo) { setPendingDuo(null); return; }
+  // In pair mode, clicking chips builds a duo/rival pair (selecting them if needed) instead of toggling selection.
+  const pickPair = (kind: PairKind, n: string) => {
+    if ((kind === 'duo' ? duoOf(n) : rivalOf(n)) !== -1) return; // already in a pair of this kind
+    if (n === pending) { setPending(null); return; }
+    if (pending) {
+      const other = kind === 'duo' ? rivals : duos;
+      if (other.some((d) => d.includes(pending) && d.includes(n))) { setErr(`${pending} and ${n} can't be both a duo and rivals.`); return; }
+    }
     if (!sel.includes(n)) { if (sel.length >= 10) return; setSel((s) => [...s, n]); }
-    setRes(null); setOk(null);
-    if (!pendingDuo) { setPendingDuo(n); return; }
-    setDuos((ds) => [...ds, [pendingDuo, n]]);
-    setPendingDuo(null); setDuoMode(false);
+    setRes(null); setOk(null); setErr('');
+    if (!pending) { setPending(n); return; }
+    setPairsOf(kind)((ps) => [...ps, [pending, n]]);
+    setPending(null); setPairMode(null);
   };
-  const onChip = (n: string) => (duoMode ? pickDuo(n) : toggle(n));
-  const removeDuo = (i: number) => { setRes(null); setDuos((ds) => ds.filter((_, j) => j !== i)); };
-  const toggleDuoMode = () => { if (!duoMode && duos.length >= MAX_DUOS) return; setDuoMode(!duoMode); setPendingDuo(null); };
+  const onChip = (n: string) => (pairMode ? pickPair(pairMode, n) : toggle(n));
+  const removePair = (kind: PairKind, i: number) => { setRes(null); setPairsOf(kind)((ps) => ps.filter((_, j) => j !== i)); };
+  const togglePairMode = (kind: PairKind) => {
+    if (pairMode !== kind && pairsOf(kind).length >= MAX_PAIRS) return;
+    setPairMode(pairMode === kind ? null : kind); setPending(null); setErr('');
+  };
+  // Duo colors fill the chip; rival colors draw a ring around it, so a player in both shows both.
   const chipCls = (n: string) => {
-    const d = duoOf(n);
-    return d !== -1 ? `on duo-${d}` : n === pendingDuo ? `on duo-${duos.length} duo-pending` : sel.includes(n) ? 'on' : '';
+    const d = duoOf(n), r = rivalOf(n), isPending = n === pending;
+    const cls = [sel.includes(n) || isPending ? 'on' : ''];
+    if (d !== -1) cls.push(`duo-${d}`); else if (isPending && pairMode === 'duo') cls.push(`duo-${duos.length}`, 'duo-pending');
+    if (r !== -1) cls.push(`rival-${r}`); else if (isPending && pairMode === 'rival') cls.push(`rival-${rivals.length}`, 'rival-pending');
+    return cls.join(' ');
   };
   const chip = (p: P, extra = '') => <span key={p.name} className={`chip ${chipCls(p.name)} ${extra}`} onClick={() => onChip(p.name)}>{p.name}<small className={eloTier(p.mmr)}>{Math.round(p.mmr)}</small></span>;
+  const clearAll = () => { setSel([]); setRes(null); setDuos([]); setRivals([]); setPairMode(null); setPending(null); };
   const selectPick = (i: number) => { if (i === pick) return; setSlideDir(i > pick ? 'right' : 'left'); setPick(i); setAnimKey((k) => k + 1); setSwapMode(false); setSwappedTeams(null); setSwappedStats(null); setInlineGrabbed(null); };
 
   async function recalcStats(teams: { a: Side['players']; b: Side['players'] }) {
@@ -124,9 +145,10 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     try {
       const saved = sessionStorage.getItem('matchmaking-state');
       if (saved) {
-        const { selection, results, pickIndex, duos: savedDuos } = JSON.parse(saved);
+        const { selection, results, pickIndex, duos: savedDuos, rivals: savedRivals } = JSON.parse(saved);
         if (selection?.length) setSel(selection);
         if (Array.isArray(savedDuos)) setDuos(savedDuos);
+        if (Array.isArray(savedRivals)) setRivals(savedRivals);
         if (results) setRes(results);
         if (typeof pickIndex === 'number') setPick(pickIndex);
       }
@@ -142,9 +164,10 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
         results: res,
         pickIndex: pick,
         duos,
+        rivals,
       }));
     } catch {}
-  }, [sel, res, pick, duos]);
+  }, [sel, res, pick, duos, rivals]);
 
   // Auto-generate if loaded with 10 players from URL
   useEffect(() => {
@@ -153,7 +176,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
 
   async function generate(resetPick = true) {
     setBusy(true); setErr(''); setOk(null);
-    const r = await fetch('/api/matchmake', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ players: sel, duos }) });
+    const r = await fetch('/api/matchmake', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ players: sel, duos, rivals }) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setErr(j.error); setRes(null); return; }
     setRes(j); if (resetPick) setPick(0);
@@ -214,15 +237,15 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
     const r = await fetch('/api/matches', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) { setErr(j.error); return; }
-    setModalOpen(false); setOk({ msg: `Saved — Team ${winner + 1} won. MMRs updated.`, gameId: j.id }); setRes(null); setSel([]); setDuos([]); try { sessionStorage.removeItem('matchmaking-state'); } catch {} router.refresh();
+    setModalOpen(false); setOk({ msg: `Saved — Team ${winner + 1} won. MMRs updated.`, gameId: j.id }); setRes(null); setSel([]); setDuos([]); setRivals([]); try { sessionStorage.removeItem('matchmaking-state'); } catch {} router.refresh();
   }
 
   function copyLink() {
     const SHIFT = 7;
     const indices = sel.map((n) => players.findIndex((p) => p.name === n));
     const enc = (i: number) => String.fromCharCode(65 + ((i + SHIFT) % 62));
-    const duoChars = duos.flat().map((n) => enc(players.findIndex((p) => p.name === n))).join('');
-    const encoded = indices.map(enc).join('') + enc(pick) + duoChars;
+    const pairChars = (ps: Pair[]) => ps.flat().map((n) => enc(players.findIndex((p) => p.name === n))).join('');
+    const encoded = indices.map(enc).join('') + enc(pick) + pairChars(duos) + (rivals.length ? '-' + pairChars(rivals) : '');
     const url = `${window.location.origin}/matchmaking?d=${encoded}`;
     navigator.clipboard.writeText(url);
     setCopied('link'); setTimeout(() => setCopied(null), 2000);
@@ -265,7 +288,7 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
           return (
             <tr key={p.name}>
               <td>{ROLE_EMOJI[p.role]} <span className="muted small">{p.role}</span></td>
-              <td><span className="player-hover"><a href={`/players/${encodeURIComponent(p.name)}`} target="_blank" rel="noopener noreferrer">{p.name}</a>{duoOf(p.name) !== -1 && <span className={`duo-dot duo-${duoOf(p.name)}`} title={`Duo ${duoOf(p.name) + 1}`} />}{pl && <span className="player-tooltip"><RingChart w={pl.last10.w} l={pl.last10.l} /><span className="muted small">Last 10</span></span>}</span></td>
+              <td><span className="player-hover"><a href={`/players/${encodeURIComponent(p.name)}`} target="_blank" rel="noopener noreferrer">{p.name}</a>{duoOf(p.name) !== -1 && <span className={`duo-dot duo-${duoOf(p.name)}`} title={`Duo ${duoOf(p.name) + 1}`} />}{rivalOf(p.name) !== -1 && <span className={`rival-dot rival-${rivalOf(p.name)}`} title={`Rival ${rivalOf(p.name) + 1}`} />}{pl && <span className="player-tooltip"><RingChart w={pl.last10.w} l={pl.last10.l} /><span className="muted small">Last 10</span></span>}</span></td>
               <td className="num">{Math.round(p.mmr)}</td>
               {swapMode && <td><button className={`grab ${inlineGrabbed?.team === teamIdx && inlineGrabbed?.idx === i ? 'on' : ''}`} onClick={() => handleInlineGrab(teamIdx, i)}>⇅</button></td>}
             </tr>
@@ -294,10 +317,12 @@ export default function Matchmaker({ players, admin, initialSelection = [], init
             <span className="elo-row"><span className="elo-swatch elo-low" />Below 1100</span>
           </span>
         </span>
-        <span style={{ flex: 1 }} /><span style={{ fontSize: 20 }}><b style={{ color: sel.length === 10 ? 'var(--text)' : 'var(--muted)' }}>{sel.length}</b> / 10</span><span style={{ flex: 1 }} /><button className={`duo-btn ${duoMode ? 'on' : ''}`} disabled={!duoMode && duos.length >= MAX_DUOS} onClick={toggleDuoMode} title={duos.length >= MAX_DUOS ? `Max ${MAX_DUOS} duos` : 'Add duo'}><AddIcon style={{ fontSize: 18 }} />Duo</button><button className="clear-btn" onClick={() => { setSel([]); setRes(null); setDuos([]); setDuoMode(false); setPendingDuo(null); }}>Clear</button></div>
-      {(duos.length > 0 || duoMode) && <div className="row duo-row">
-        {duos.map((d, i) => <span key={i} className={`duo-tag duo-${i}`}>Duo {i + 1}: {d[0]} + {d[1]}<button onClick={() => removeDuo(i)} title="Remove duo"><CloseIcon style={{ fontSize: 14 }} /></button></span>)}
-        {duoMode && <span className="muted small">{pendingDuo ? `Pick ${pendingDuo}'s duo partner…` : `Pick two players for Duo ${duos.length + 1}…`}</span>}
+        <span style={{ flex: 1 }} /><span style={{ fontSize: 20 }}><b style={{ color: sel.length === 10 ? 'var(--text)' : 'var(--muted)' }}>{sel.length}</b> / 10</span><span style={{ flex: 1 }} /><span className="option-wrap"><button className={`duo-btn ${pairMode === 'duo' ? 'on' : ''}`} disabled={pairMode !== 'duo' && duos.length >= MAX_PAIRS} onClick={() => togglePairMode('duo')}><AddIcon style={{ fontSize: 18 }} />Duo</button><span className="option-tooltip below">{duos.length >= MAX_PAIRS ? `Max ${MAX_PAIRS} duos` : 'Pick 2 players to always put on the same team'}</span></span><span className="option-wrap"><button className={`rival-btn ${pairMode === 'rival' ? 'on' : ''}`} disabled={pairMode !== 'rival' && rivals.length >= MAX_PAIRS} onClick={() => togglePairMode('rival')}><AddIcon style={{ fontSize: 18 }} />Rival</button><span className="option-tooltip below">{rivals.length >= MAX_PAIRS ? `Max ${MAX_PAIRS} rival pairs` : 'Pick 2 players to always put on opposite teams'}</span></span><button className="clear-btn" onClick={clearAll}>Clear</button></div>
+      {(duos.length > 0 || rivals.length > 0 || pairMode) && <div className="row duo-row">
+        {duos.map((d, i) => <span key={`d${i}`} className={`duo-tag duo-${i}`}>Duo {i + 1}: {d[0]} + {d[1]}<button onClick={() => removePair('duo', i)} title="Remove duo"><CloseIcon style={{ fontSize: 14 }} /></button></span>)}
+        {rivals.map((d, i) => <span key={`r${i}`} className={`duo-tag rival-tag rival-${i}`}>Rival {i + 1}: {d[0]} vs {d[1]}<button onClick={() => removePair('rival', i)} title="Remove rivals"><CloseIcon style={{ fontSize: 14 }} /></button></span>)}
+        {pairMode === 'duo' && <span className="muted small">{pending ? `Pick ${pending}'s duo partner…` : `Pick two players for Duo ${duos.length + 1}…`}</span>}
+        {pairMode === 'rival' && <span className="muted small">{pending ? `Pick ${pending}'s rival…` : `Pick two players for Rival ${rivals.length + 1}…`}</span>}
       </div>}
       {q ? (
         <div className="chips">{shown.map((p, i) => chip(p, i === 0 ? 'highlight' : ''))}</div>

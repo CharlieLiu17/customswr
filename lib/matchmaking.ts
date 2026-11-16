@@ -57,23 +57,28 @@ function plan(team: MMPlayer[], roles: Role[]): TeamPlan {
  * the one-trick and role-coverage constraints and returns them sorted by MMR gap (best first).
  * Deterministic and guaranteed optimal, unlike the sheet's randomised hill-climb.
  */
-export function findSplits(players: MMPlayer[], duos: [string, string][] = []): Split[] {
+export function findSplits(players: MMPlayer[], duos: [string, string][] = [], rivals: [string, string][] = []): Split[] {
   if (players.length !== 10) throw new Error('Matchmaking needs exactly 10 players');
   if (new Set(players.map((p) => p.name)).size !== 10) throw new Error('Duplicate players');
   const idx = new Map(players.map((p, i) => [p.name, i]));
-  const duoIdx = duos.map(([x, y]) => {
-    const i = idx.get(x), j = idx.get(y);
-    if (i === undefined || j === undefined) throw new Error(`Duo ${x} + ${y} must both be in the lobby`);
-    if (i === j) throw new Error('A duo needs two different players');
-    return [i, j] as const;
-  });
-  if (new Set(duoIdx.flat()).size !== duoIdx.length * 2) throw new Error('A player can only be in one duo');
+  const toIdx = (pairs: [string, string][], kind: 'duo' | 'rival') => {
+    const out = pairs.map(([x, y]) => {
+      const i = idx.get(x), j = idx.get(y);
+      if (i === undefined || j === undefined) throw new Error(`${kind === 'duo' ? 'Duo' : 'Rivals'} ${x} + ${y} must both be in the lobby`);
+      if (i === j) throw new Error(`A ${kind} pair needs two different players`);
+      return [i, j] as const;
+    });
+    if (new Set(out.flat()).size !== out.length * 2) throw new Error(`A player can only be in one ${kind} pair`);
+    return out;
+  };
+  const duoIdx = toIdx(duos, 'duo'), rivalIdx = toIdx(rivals, 'rival');
   const out: Split[] = [];
   // fix players[0] on team A so mirrored splits are not counted twice
   for (let mask = 0; mask < 1 << 9; mask++) {
     // bit for player i (team A = 1); player 0 is always on A
     const onA = (i: number) => i === 0 || ((mask >> (i - 1)) & 1) === 1;
-    if (duoIdx.some(([i, j]) => onA(i) !== onA(j))) continue;
+    if (duoIdx.some(([i, j]) => onA(i) !== onA(j))) continue; // duos stay together
+    if (rivalIdx.some(([i, j]) => onA(i) === onA(j))) continue; // rivals face each other
     const a: MMPlayer[] = [players[0]], b: MMPlayer[] = [];
     for (let i = 1; i < 10; i++) (onA(i) ? a : b).push(players[i]);
     if (a.length !== 5) continue;

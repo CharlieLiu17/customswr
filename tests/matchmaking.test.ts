@@ -70,4 +70,24 @@ describe('findSplits', () => {
     expect(() => findSplits(pool, [['P1', 'Nobody']])).toThrow();
     expect(() => findSplits(pool, [['P1', 'P2'], ['P2', 'P3']])).toThrow();
   });
+  it('puts rivals on opposite teams, combined with duos', () => {
+    const r = rng(123);
+    for (let t = 0; t < 30; t++) {
+      const pool = randomPool(r).map((p) => ({ ...p, playable: [...ROLES], oneTrick: null }));
+      const duos: [string, string][] = [['P1', 'P2']];
+      const rivals: [string, string][] = [['P1', 'P5'], ['P0', 'P9']];
+      const res = findSplits(pool, duos, rivals);
+      expect(res.length).toBeGreaterThan(0);
+      for (const s of res) {
+        const a = new Set(s.a.players.map((p) => p.name));
+        for (const [x, y] of duos) expect(a.has(x)).toBe(a.has(y));
+        for (const [x, y] of rivals) expect(a.has(x)).not.toBe(a.has(y));
+      }
+    }
+  });
+  it('returns no splits when the same pair is both duo and rivals', () => {
+    const pool = randomPool(rng(5)).map((p) => ({ ...p, playable: [...ROLES], oneTrick: null }));
+    expect(findSplits(pool, [['P1', 'P2']], [['P1', 'P2']])).toHaveLength(0);
+    expect(() => findSplits(pool, [], [['P1', 'P2'], ['P2', 'P3']])).toThrow();
+  });
 });

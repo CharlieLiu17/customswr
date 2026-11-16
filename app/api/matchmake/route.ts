@@ -5,9 +5,11 @@ import { relations, teamAgainst, teamSynergy } from '@/lib/stats';
 import { ROLES, type Role } from '@/lib/types';
 
 export const POST = handler(async (req) => {
-  const { players: names, duos = [] } = (await req.json()) as { players: string[]; duos?: [string, string][] };
+  const { players: names, duos = [], rivals = [] } = (await req.json()) as { players: string[]; duos?: [string, string][]; rivals?: [string, string][] };
   if (!Array.isArray(names) || names.length !== 10) throw new Error('Pick exactly 10 players');
-  if (!Array.isArray(duos) || duos.length > 2 || duos.some((d) => !Array.isArray(d) || d.length !== 2 || d.some((n) => typeof n !== 'string'))) throw new Error('At most 2 duos, each with 2 players');
+  const badPairs = (ps: unknown) => !Array.isArray(ps) || ps.length > 2 || ps.some((d) => !Array.isArray(d) || d.length !== 2 || d.some((n) => typeof n !== 'string'));
+  if (badPairs(duos)) throw new Error('At most 2 duos, each with 2 players');
+  if (badPairs(rivals)) throw new Error('At most 2 rival pairs, each with 2 players');
   const [all, lines] = await Promise.all([getPlayers(), getLines()]);
   const byName = new Map(all.map((p) => [p.name, p]));
   const counts = new Map<string, Partial<Record<Role, number>>>();
@@ -16,10 +18,11 @@ export const POST = handler(async (req) => {
     const p = byName.get(n); if (!p) throw new Error(`Unknown player ${n}`);
     return { name: p.name, mmr: p.mmr, playable: p.playable_roles, oneTrick: p.one_trick_role, roleCounts: counts.get(n) };
   });
-  const splits = findSplits(pool, duos);
+  const splits = findSplits(pool, duos, rivals);
   if (!splits.length) {
     const noRole = pool.filter((p) => !p.playable.length).map((p) => p.name);
-    throw new Error(noRole.length ? `${noRole.join(', ')} has no playable roles set.` : `No valid split: these 10 players cannot fill 5 roles on both teams without two same-role one-tricks together${duos.length ? ' while keeping duos together' : ''}.`);
+    const pairRules = [duos.length && 'keeping duos together', rivals.length && 'keeping rivals apart'].filter(Boolean).join(' and ');
+    throw new Error(noRole.length ? `${noRole.join(', ')} has no playable roles set.` : `No valid split: these 10 players cannot fill 5 roles on both teams without two same-role one-tricks together${pairRules ? ` while ${pairRules}. Check that the duo and rival pairs don't contradict each other` : ''}.`);
   }
   const rel = relations(lines);
   const side = (t: (typeof splits)[number]['a'], other: (typeof splits)[number]['a']) => {

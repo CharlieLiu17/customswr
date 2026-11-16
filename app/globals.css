@@ -160,3 +160,14 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:-1p
 .duo-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-left:6px; vertical-align:middle; }
 .duo-dot.duo-0 { background:var(--duo0); } .duo-dot.duo-1 { background:var(--duo1); }
 .icon-btn { display:inline-flex; align-items:center; padding:2px; background:none; border:none; color:var(--muted); cursor:pointer; } .icon-btn:hover { color:var(--text); }
+/* Rivals: ring around the chip (box-shadow) so it can combine with a duo fill */
+:root { --rival0:#ff3b3b; --rival1:#7dd3fc; }
+.chip.rival-0 { box-shadow:0 0 0 3px var(--rival0); } .chip.rival-1 { box-shadow:0 0 0 3px var(--rival1); }
+.chip.rival-pending { box-shadow:none; outline:3px dashed var(--rival0); outline-offset:0; } .chip.rival-1.rival-pending { outline-color:var(--rival1); }
+.chips { padding:3px; } /* room for rival rings */
+.rival-btn { display:flex; align-items:center; gap:2px; padding:6px 10px; } .rival-btn.on { border-color:var(--rival0); color:var(--rival0); }
+.duo-tag.rival-0 { border:2px solid var(--rival0); background:transparent; } .duo-tag.rival-1 { border:2px solid var(--rival1); background:transparent; }
+.rival-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-left:6px; vertical-align:middle; background:transparent; }
+.rival-dot.rival-0 { border:2px solid var(--rival0); } .rival-dot.rival-1 { border:2px solid var(--rival1); }
+.option-tooltip.below { bottom:auto; top:100%; margin-bottom:0; margin-top:8px; z-index:5; }
+.option-tooltip.below::after { top:auto; bottom:100%; border-top-color:transparent; border-bottom-color:var(--line); }
