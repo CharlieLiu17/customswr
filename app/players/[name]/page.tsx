@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { load, pct } from '@/lib/page';
 import { relations, summarize, wr } from '@/lib/stats';
 import { ROLES, ROLE_EMOJI } from '@/lib/types';
+import Avatar from '@/components/Avatar';
 
 function championIconPath(champion: string): string {
   const id = champion.replace(/[^a-zA-Z]/g, '').toLowerCase();
@@ -47,7 +48,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ name: s
     .sort((a, b) => b.games - a.games || (b.winrate ?? 0) - (a.winrate ?? 0));
   const tbl = (title: string, xs: typeof mate) => (<div className="card"><b>{title}</b><table><tbody>{xs.length ? xs.map((x) => <tr key={x.n}><td><Link href={`/head-to-head?a=${encodeURIComponent(name)}&b=${encodeURIComponent(x.n)}`}>{x.n}</Link></td><td className="num">{x.w}-{x.l}</td><td className="num">{pct(x.r, 0)}</td></tr>) : <tr><td className="muted">Needs {MIN}+ games together</td></tr>}</tbody></table></div>);
   return (<>
-    <h1>{p.name} {p.one_trick_role && <span className="pill">One-trick {ROLE_EMOJI[p.one_trick_role]}</span>} {!p.active && <span className="pill warn">inactive</span>}</h1>
+    <h1 style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}><Avatar src={p.avatar_url} name={p.name} size={56} />{p.name} {p.one_trick_role && <span className="pill">One-trick {ROLE_EMOJI[p.one_trick_role]}</span>} {!p.active && <span className="pill warn">inactive</span>}</h1>
     <div className="grid g3" style={{ marginBottom: 14 }}>
       <div className="card"><div className="stat">{Math.round(p.mmr)}</div><div className="statlabel">MMR (started {Math.round(p.start_mmr)})</div></div>
       <div className="card"><div className="stat">{s?.wins ?? 0}–{s?.losses ?? 0}</div><div className="statlabel">Record · {pct(s?.wr)}</div></div>

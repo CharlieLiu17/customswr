@@ -6,6 +6,8 @@ export type Result = 'W' | 'L';
 export interface PlayerRow {
   id: number; name: string; start_mmr: number; baseline_mmr: number; mmr: number;
   active: boolean; one_trick_role: Role | null; playable_roles: Role[]; igns: string[];
+  /** Resolved image URL, or null when the player has no profile picture. */
+  avatar_url: string | null;
 }
 /** One player's line in one game (flat row joined from matches + match_players). */
 export interface GameLine {

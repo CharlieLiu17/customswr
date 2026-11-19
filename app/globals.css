@@ -171,3 +171,9 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:-1p
 .rival-dot.rival-0 { border:2px solid var(--rival0); } .rival-dot.rival-1 { border:2px solid var(--rival1); }
 .option-tooltip.below { bottom:auto; top:100%; margin-bottom:0; margin-top:8px; z-index:5; }
 .option-tooltip.below::after { top:auto; bottom:100%; border-top-color:transparent; border-bottom-color:var(--line); }
+/* Records name cell: fixed avatar column so names line up whether or not a player has a picture */
+.name-cell { display:flex; align-items:center; gap:6px; }
+.avatar-slot { width:20px; height:20px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; margin-right:2px; }
+.avatar-slot img { display:block; }
+/* Indent the Name header past the avatar slot (20px) + its margin (2px) + gap (6px) so it lines up with the names */
+th.name-th { padding-left:calc(10px + 28px); }

@@ -1,6 +1,7 @@
 import { db } from './db';
 import type { GameLine, PlayerRow, Result, Role } from './types';
 import { applyResult } from './mmr';
+import { avatarUrl } from './avatars';
 
 export async function getPlayers(): Promise<PlayerRow[]> {
   const [p, r, i] = await Promise.all([
@@ -15,7 +16,7 @@ export async function getPlayers(): Promise<PlayerRow[]> {
   return p.rows.map((x) => ({
     id: Number(x.id), name: String(x.name), start_mmr: Number(x.start_mmr), baseline_mmr: Number(x.baseline_mmr), mmr: Number(x.mmr),
     active: Number(x.active) === 1, one_trick_role: (x.one_trick_role as Role | null) ?? null, playable_roles: roles.get(Number(x.id)) ?? [],
-    igns: igns.get(Number(x.id)) ?? [],
+    igns: igns.get(Number(x.id)) ?? [], avatar_url: avatarUrl(String(x.name)),
   }));
 }
 
