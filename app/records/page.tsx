@@ -40,7 +40,10 @@ export default async function Records({ searchParams }: { searchParams: Promise<
   }
   const rows = players.filter((p) => p.active).map((p) => ({ p, s: sum.get(p.name) })).filter((r) => sp.all || (r.s && r.s.games > 0));
   const key = (r: (typeof rows)[number]) => (sort === 'mmr' ? r.p.mmr : sort === 'wr' ? (r.s?.wr ?? -1) : sort === 'games' ? (r.s?.games ?? 0) : sort === 'wins' ? (r.s?.wins ?? 0) : sort === 'losses' ? (r.s?.losses ?? 0) : sort === 'fill' ? (r.s?.fill ?? -1) : r.p.name.toLowerCase());
-  const cmp = dir === 'desc' ? (a: any, b: any) => (key(a) > key(b) ? -1 : key(a) < key(b) ? 1 : 0) : (a: any, b: any) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0);
+  const primary = dir === 'desc' ? (a: any, b: any) => (key(a) > key(b) ? -1 : key(a) < key(b) ? 1 : 0) : (a: any, b: any) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0);
+  // Ties: higher WR first (or more games when already sorting by WR), then name (stable order from the DB)
+  const tiebreak = (a: (typeof rows)[number], b: (typeof rows)[number]) => sort === 'wr' ? (b.s?.games ?? 0) - (a.s?.games ?? 0) : (b.s?.wr ?? -1) - (a.s?.wr ?? -1);
+  const cmp = (a: (typeof rows)[number], b: (typeof rows)[number]) => primary(a, b) || tiebreak(a, b);
   rows.sort(cmp);
   const topMmr = Math.max(...rows.map((r) => r.p.mmr));
   const total = new Set(lines.map((l) => l.match_id)).size;
