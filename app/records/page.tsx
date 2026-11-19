@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import { championIconPath } from '@/lib/champions';
 import { load, pct } from '@/lib/page';
 import { summarize } from '@/lib/stats';
 import { ROLES, ROLE_EMOJI } from '@/lib/types';
@@ -13,6 +15,15 @@ export default async function Records({ searchParams }: { searchParams: Promise<
   const dir = sp.dir === 'asc' ? 'asc' : 'desc';
   const { players, lines } = await load();
   const sum = summarize(lines);
+  // Top 3 most-played champions per player (ties: alphabetical); players with no champion data get none
+  const champCounts = new Map<string, Map<string, number>>();
+  for (const l of lines) {
+    if (!l.champion) continue;
+    const m = champCounts.get(l.player) ?? new Map<string, number>();
+    m.set(l.champion, (m.get(l.champion) ?? 0) + 1);
+    champCounts.set(l.player, m);
+  }
+  const topChamps = (name: string) => [...(champCounts.get(name) ?? [])].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 3);
   // Calculate MMR change for players in the latest game only
   const lastChange = new Map<string, number>();
   const latestSeq = Math.max(...lines.map((l) => l.seq));
@@ -41,12 +52,13 @@ export default async function Records({ searchParams }: { searchParams: Promise<
     <h1>Records</h1>
     <div className="row" style={{ marginBottom: 8 }}><span className="muted">{total} games · {rows.length} players</span><span style={{ flex: 1 }} /><RecordsSettings sort={sort} showAll={!!sp.all} /></div>
     <div className="card scroll"><table>
-      <thead><tr><th>#</th>{th('name', '')}<th>Plays</th>{th('mmr')}{th('wins')}{th('losses')}{th('wr')}{th('games')}{th('fill')}</tr></thead>
+      <thead><tr><th>#</th>{th('name', '')}<th>Plays</th><th>Champions</th>{th('mmr')}{th('wins')}{th('losses')}{th('wr')}{th('games')}{th('fill')}</tr></thead>
       <tbody>{rows.map(({ p, s }, i) => (
         <tr key={p.id}>
           <td className="muted">{i + 1}</td>
           <td><Link href={`/players/${encodeURIComponent(p.name)}`}>{p.name}</Link>{p.mmr === topMmr && ' 👑'}{p.one_trick_role && <span className="pill" style={{ marginLeft: 6 }}>OTP {ROLE_EMOJI[p.one_trick_role]}</span>}</td>
           <td>{ROLES.filter((r) => p.playable_roles.includes(r)).map((r) => ROLE_EMOJI[r]).join('')}</td>
+          <td><span style={{ display: 'inline-flex', gap: 4, verticalAlign: 'middle' }}>{topChamps(p.name).map(([c, n]) => <Image key={c} src={championIconPath(c)} alt={c} title={`${c} · ${n} game${n === 1 ? '' : 's'}`} width={22} height={22} style={{ borderRadius: 4 }} />)}</span></td>
           <td className="num">{lastChange.has(p.name) && <span className={lastChange.get(p.name)! >= 0 ? 'W' : 'L'} style={{ marginRight: 6, fontSize: 12 }}>{lastChange.get(p.name)! >= 0 ? '+' : ''}{Math.round(lastChange.get(p.name)!)}</span>}<b>{Math.round(p.mmr)}</b></td><td className="num W">{s?.wins ?? 0}</td><td className="num L">{s?.losses ?? 0}</td>
           <td className="num">{pct(s?.wr)}</td><td className="num">{s?.games ?? 0}</td><td className="num">{pct(s?.fill, 0)}</td>
         </tr>))}</tbody>
