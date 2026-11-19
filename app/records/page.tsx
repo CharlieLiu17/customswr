@@ -58,7 +58,7 @@ export default async function Records({ searchParams }: { searchParams: Promise<
           <td className="muted">{i + 1}</td>
           <td><Link href={`/players/${encodeURIComponent(p.name)}`}>{p.name}</Link>{p.mmr === topMmr && ' 👑'}{p.one_trick_role && <span className="pill" style={{ marginLeft: 6 }}>OTP {ROLE_EMOJI[p.one_trick_role]}</span>}</td>
           <td>{ROLES.filter((r) => p.playable_roles.includes(r)).map((r) => ROLE_EMOJI[r]).join('')}</td>
-          <td><span style={{ display: 'inline-flex', gap: 4, verticalAlign: 'middle' }}>{topChamps(p.name).map(([c, n]) => <Image key={c} src={championIconPath(c)} alt={c} title={`${c} · ${n} game${n === 1 ? '' : 's'}`} width={22} height={22} style={{ borderRadius: 4 }} />)}</span></td>
+          <td><span style={{ display: 'inline-flex', gap: 4, verticalAlign: 'middle' }}>{topChamps(p.name).map(([c, n]) => <Image key={c} src={championIconPath(c)} alt={c} title={`${c} · ${n} game${n === 1 ? '' : 's'}`} width={22} height={22} style={{ borderRadius: '50%' }} />)}</span></td>
           <td className="num">{lastChange.has(p.name) && <span className={lastChange.get(p.name)! >= 0 ? 'W' : 'L'} style={{ marginRight: 6, fontSize: 12 }}>{lastChange.get(p.name)! >= 0 ? '+' : ''}{Math.round(lastChange.get(p.name)!)}</span>}<b>{Math.round(p.mmr)}</b></td><td className="num W">{s?.wins ?? 0}</td><td className="num L">{s?.losses ?? 0}</td>
           <td className="num">{pct(s?.wr)}</td><td className="num">{s?.games ?? 0}</td><td className="num">{pct(s?.fill, 0)}</td>
         </tr>))}</tbody>
