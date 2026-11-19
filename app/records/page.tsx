@@ -15,15 +15,19 @@ export default async function Records({ searchParams }: { searchParams: Promise<
   const dir = sp.dir === 'asc' ? 'asc' : 'desc';
   const { players, lines } = await load();
   const sum = summarize(lines);
-  // Top 3 most-played champions per player (ties: alphabetical); players with no champion data get none
-  const champCounts = new Map<string, Map<string, number>>();
+  // Top 3 most-played champions per player (ties: higher WR, then alphabetical); players with no champion data get none
+  const champStats = new Map<string, Map<string, { games: number; wins: number }>>();
   for (const l of lines) {
     if (!l.champion) continue;
-    const m = champCounts.get(l.player) ?? new Map<string, number>();
-    m.set(l.champion, (m.get(l.champion) ?? 0) + 1);
-    champCounts.set(l.player, m);
+    const m = champStats.get(l.player) ?? new Map<string, { games: number; wins: number }>();
+    const c = m.get(l.champion) ?? { games: 0, wins: 0 };
+    c.games++; if (l.result === 'W') c.wins++;
+    m.set(l.champion, c);
+    champStats.set(l.player, m);
   }
-  const topChamps = (name: string) => [...(champCounts.get(name) ?? [])].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 3);
+  const topChamps = (name: string) => [...(champStats.get(name) ?? [])]
+    .sort(([an, a], [bn, b]) => b.games - a.games || b.wins / b.games - a.wins / a.games || an.localeCompare(bn))
+    .slice(0, 3);
   // Calculate MMR change for players in the latest game only
   const lastChange = new Map<string, number>();
   const latestSeq = Math.max(...lines.map((l) => l.seq));
@@ -61,7 +65,7 @@ export default async function Records({ searchParams }: { searchParams: Promise<
           <td className="muted">{i + 1}</td>
           <td><Link href={`/players/${encodeURIComponent(p.name)}`}>{p.name}</Link>{p.mmr === topMmr && ' 👑'}{p.one_trick_role && <span className="pill" style={{ marginLeft: 6 }}>OTP {ROLE_EMOJI[p.one_trick_role]}</span>}</td>
           <td>{ROLES.filter((r) => p.playable_roles.includes(r)).map((r) => ROLE_EMOJI[r]).join('')}</td>
-          <td><span style={{ display: 'inline-flex', gap: 4, verticalAlign: 'middle' }}>{topChamps(p.name).map(([c, n]) => <Image key={c} src={championIconPath(c)} alt={c} title={`${c} · ${n} game${n === 1 ? '' : 's'}`} width={22} height={22} style={{ borderRadius: '50%' }} />)}</span></td>
+          <td><span style={{ display: 'inline-flex', gap: 4, verticalAlign: 'middle' }}>{topChamps(p.name).map(([c, { games: n, wins: w }]) => <Image key={c} src={championIconPath(c)} alt={c} title={`${c} · ${n} game${n === 1 ? '' : 's'} · ${Math.round((w / n) * 100)}% WR`} width={22} height={22} style={{ borderRadius: '50%' }} />)}</span></td>
           <td className="num">{lastChange.has(p.name) && <span className={lastChange.get(p.name)! >= 0 ? 'W' : 'L'} style={{ marginRight: 6, fontSize: 12 }}>{lastChange.get(p.name)! >= 0 ? '+' : ''}{Math.round(lastChange.get(p.name)!)}</span>}<b>{Math.round(p.mmr)}</b></td><td className="num W">{s?.wins ?? 0}</td><td className="num L">{s?.losses ?? 0}</td>
           <td className="num">{pct(s?.wr)}</td><td className="num">{s?.games ?? 0}</td><td className="num">{pct(s?.fill, 0)}</td>
         </tr>))}</tbody>
